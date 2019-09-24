@@ -3,7 +3,7 @@ cs_and_analysis/figures
 metrics_and_analysis/web_data
 metrics_and_analysis/training_results
 model/results
-checkpoints/
+model_checkpoints/
 UniversalSentenceEncoder/*
 !UniversalSentenceEncoder/*.py
 Toxicity/*
