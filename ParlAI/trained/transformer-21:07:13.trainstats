@@ -1,1 +1,0 @@
-{"train_time": 1329.9057023525238, "total_epochs": 1.0000057356551266, "impatience": 0, "valid_reports": [{"exs": 12015, "accuracy": 0.009322, "f1": 0.08918, "bleu": 0.01362, "lr": 0.00056, "num_updates": 24907, "loss": 1883.0, "token_acc": 0.3356, "nll_loss": 3.274, "ppl": 26.42, "train_time": 1329.6158773899078}]}
