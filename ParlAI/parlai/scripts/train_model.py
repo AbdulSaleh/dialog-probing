@@ -671,8 +671,8 @@ class TrainLoop:
     def log(self):
         """Output a training log entry."""
         opt = self.opt
-        if opt['display_examples']:
-            print(self.world.display() + '\n~~')
+        # if opt['display_examples']:
+        #     print(self.world.display() + '\n~~')
         logs = []
         # get report
         train_report = self.world.report()
