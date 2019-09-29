@@ -9,6 +9,8 @@ UniversalSentenceEncoder/*
 Toxicity/*
 !Toxicity/*.py
 !ParlAI/*
+ParlAI/data
+ParlAI/trained
 model/results
 /fonts/
 *.png
