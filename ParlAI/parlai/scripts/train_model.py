@@ -548,7 +548,7 @@ class TrainLoop:
             self.impatience = 0
             if opt.get('model_file') and is_primary_worker():
                 print("[ saving best valid model: " + opt['model_file'] + " ]")
-                self.save_model(suffix='-' + str(self.parleys))
+                self.save_model()
                 print(
                     "[ saving best valid metric: " + opt['model_file'] + ".best_valid ]"
                 )
@@ -769,7 +769,7 @@ class TrainLoop:
                             opt['model_file']
                         )
                     )
-                    self.save_model('.checkpoint')
+                    self.save_model(suffix='-' + str(self.parleys) + '.checkpoint')
                     self.save_time.reset()
 
         if not self.saved and is_primary_worker():

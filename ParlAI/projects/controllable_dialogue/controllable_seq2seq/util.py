@@ -77,6 +77,7 @@ def remove_prefix(utt, prefix):
     Returns:
       new utt: utt with the prefix+" " removed.
     """
+    # Abdul uncommented because of bug
     # try:
     #     assert utt[: len(prefix) + 1] == prefix + " "
     # except AssertionError as e:
