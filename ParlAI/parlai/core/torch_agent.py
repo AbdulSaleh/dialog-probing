@@ -497,7 +497,7 @@ class TorchAgent(ABC, Agent):
             'value like 0.9 or a comma-separated tuple like 0.9,0.999',
         )
         optim_group.add_argument(
-            '-wd',
+            '-wdecay',
             '--weight-decay',
             type=float,
             default=None,
@@ -510,7 +510,7 @@ class TorchAgent(ABC, Agent):
             '--lr-scheduler',
             type=str,
             default='reduceonplateau',
-            choices=['reduceonplateau', 'none', 'fixed', 'invsqrt', 'noam'],
+            choices=['reduceonplateau', 'none', 'fixed', 'invsqrt'],
             help='Learning rate scheduler.',
         )
         lr_group.add_argument(
@@ -650,11 +650,23 @@ class TorchAgent(ABC, Agent):
         """Initialize agent."""
         super().__init__(opt, shared)
         opt = self.opt
+
+        # check for cuda
+        self.use_cuda = not opt['no_cuda'] and torch.cuda.is_available()
+        if self.use_cuda:
+            if not shared:
+                print('[ Using CUDA ]')
+            if not shared and opt['gpu'] != -1:
+                torch.cuda.set_device(opt['gpu'])
+        # indicate whether using fp16
+        self.fp16 = self.use_cuda and self.opt.get('fp16', False)
+
         if shared is None:
             # intitialize any important structures from scratch
             self.replies = {}  # past replies
             self._replies_are_shared = False
             self.dict = self.build_dictionary()
+
             if opt.get('fp16'):
                 # Volta cores revert to FP32 hardware if tensors are not multiples
                 # of 8 in all dimensions. This INCLUDES the embeddings layer! As
@@ -675,6 +687,8 @@ class TorchAgent(ABC, Agent):
             # copy initialized data from shared table
             self.opt = shared['opt']
             self.dict = shared['dict']
+            self.model = shared['model']
+            self.criterion = shared['criterion']
             self.metrics = shared['metrics']
             if self.opt['batchsize'] == 1 or self.opt['interactive_mode']:
                 # if we're not using batching (e.g. mturk), then replies really need
@@ -687,16 +701,6 @@ class TorchAgent(ABC, Agent):
 
         if opt.get('numthreads', 1) > 1:
             torch.set_num_threads(1)
-
-        # check for cuda
-        self.use_cuda = not opt['no_cuda'] and torch.cuda.is_available()
-        if self.use_cuda:
-            if not shared:
-                print('[ Using CUDA ]')
-            if not shared and opt['gpu'] != -1:
-                torch.cuda.set_device(opt['gpu'])
-        # indicate whether using fp16
-        self.fp16 = self.use_cuda and self.opt.get('fp16', False)
 
         # Default to the class name, sans "Agent". child can override
         self.id = type(self).__name__.replace("Agent", "")
@@ -794,6 +798,10 @@ class TorchAgent(ABC, Agent):
                     opt['dict_file'] = init_model + '.dict'
 
         return init_model, is_finetune
+
+    def build_model(self):
+        """Construct the model and return it."""
+        raise NotImplementedError('not implemented for this class')
 
     def init_optim(self, params, optim_states=None, saved_optim_type=None):
         """
@@ -946,21 +954,6 @@ class TorchAgent(ABC, Agent):
                 return decay_factor / np.sqrt(max(1, step))
 
             self.scheduler = optim.lr_scheduler.LambdaLR(optimizer, _invsqrt_lr)
-        elif self.opt.get('lr_scheduler') == 'noam':
-            if self.opt.get('warmup_updates', -1) <= 0:
-                raise ValueError(
-                    '--lr-scheduler noam requires setting --warmup-updates'
-                )
-            warmup_updates = self.opt['warmup_updates']
-
-            def _lr(step):
-                rate = 2 * (512 ** -0.5) * min(((step+1) ** -0.5),
-                                                (step+1) * (warmup_updates ** -1.5))
-                #print(rate)
-                return rate
-
-            self.scheduler = optim.lr_scheduler.LambdaLR(optimizer, _lr)
-
         else:
             raise ValueError(
                 "Don't know what to do with lr_scheduler '{}'".format(
@@ -1012,7 +1005,39 @@ class TorchAgent(ABC, Agent):
         if steps > 0 and self.opt.get('gradient_clip', -1) > 0:
             metrics['gnorm'] = round_sigfigs(self.metrics['gnorm'] / steps, 4)
             metrics['clip'] = round_sigfigs(self.metrics['clip'] / steps, 2)
+
+        if self.use_cuda:
+            metrics['gpu_mem_percent'] = round_sigfigs(self._gpu_usage(), sigfigs=3)
+
         return metrics
+
+    def _gpu_usage(self):
+        """
+        Computes GPU memory usage.
+
+        Includes both allocated and cached memory; this should be close to the
+        output of nvidia-smi, but not reflect of how much is currently demanded
+        by the program. It may be viewed as a rough approximation of
+        worst-case-until-now.
+
+        :return: Percent of allocated GPU memory as a fraction of available.
+        """
+        if not self.use_cuda:
+            return None
+        if self.opt['gpu'] == -1:
+            # use all gpus available locally
+            devices = range(torch.cuda.device_count())
+        else:
+            devices = [self.opt['gpu']]
+        memory_avail = 0
+        memory_used = 0
+        for dev in devices:
+            props = torch.cuda.get_device_properties(dev)
+            memory_avail += props.total_memory
+            memory_used += torch.cuda.memory_allocated(dev) + torch.cuda.memory_cached(
+                dev
+            )
+        return memory_used / memory_avail
 
     def _is_lr_warming_up(self):
         """Check if we're warming up the learning rate."""
@@ -1050,7 +1075,7 @@ class TorchAgent(ABC, Agent):
             self.scheduler.step(metrics_dict['loss'])
         elif self.opt['lr_scheduler'] == 'fixed':
             self.scheduler.step()
-        elif self.opt['lr_scheduler'] == 'invsqrt' or self.opt['lr_scheduler'] == 'noam':
+        elif self.opt['lr_scheduler'] == 'invsqrt':
             # this is a training step lr scheduler, nothing to adjust in validation
             pass
         else:
@@ -1147,10 +1172,6 @@ class TorchAgent(ABC, Agent):
         :param emb_type:
             pretrained embedding type
         """
-        if not is_primary_worker():
-            # we're in distributed mode, copying embeddings in the workers
-            # slows things down considerably
-            return
         embs, name = self._get_embtype(emb_type)
         cnt = 0
         for w, i in self.dict.tok2ind.items():
@@ -1180,8 +1201,8 @@ class TorchAgent(ABC, Agent):
         shared['metrics'] = self.metrics
 
         shared['dict'] = self.dict
-        if hasattr(self, 'model'):
-            shared['model'] = self.model
+        shared['model'] = self.model
+        shared['criterion'] = self.criterion
         shared['opt'] = self.opt
         shared['replies'] = self.replies
         return shared
@@ -1259,20 +1280,26 @@ class TorchAgent(ABC, Agent):
 
         Useful to override to change vectorization behavior
         """
+
         if 'text' not in obs:
             return obs
 
         if 'text_vec' not in obs:
             # text vec is not precomputed, so we set it using the history
-            obs['full_text'] = history.get_history_str()
-            if obs['text'] is not None:
+            history_string = history.get_history_str()
+            # when text not exist, we get text_vec from history string
+            # history could be none if it is an image task and 'text'
+            # filed is be empty. We don't want this
+            if history_string is None:
+                return obs
+            obs['full_text'] = history_string
+            if history_string:
                 obs['text_vec'] = history.get_history_vec()
 
         # check truncation
-        if 'text_vec' in obs:
+        if obs.get('text_vec') is not None:
             truncated_vec = self._check_truncate(obs['text_vec'], truncate, True)
             obs.force_set('text_vec', torch.LongTensor(truncated_vec))
-
         return obs
 
     def _set_label_vec(self, obs, add_start, add_end, truncate):
@@ -1425,7 +1452,7 @@ class TorchAgent(ABC, Agent):
 
         # TEXT
         xs, x_lens = None, None
-        if any('text_vec' in ex for ex in exs):
+        if any(ex.get('text_vec') is not None for ex in exs):
             _xs = [ex.get('text_vec', self.EMPTY) for ex in exs]
             xs, x_lens = padded_tensor(
                 _xs, self.NULL_IDX, self.use_cuda, fp16friendly=self.opt.get('fp16')
@@ -1694,8 +1721,6 @@ class TorchAgent(ABC, Agent):
                 'act() will misbehave in batching mode. Set batchsize to 1, or '
                 '--interactive-mode true'
             )
-        #Uncomment to see model inputs 
-        #print(self.observation)
         return self.batch_act([self.observation])[0]
 
     def batch_act(self, observations):
@@ -1733,7 +1758,7 @@ class TorchAgent(ABC, Agent):
 
         self.match_batch(batch_reply, batch.valid_indices, output)
         self.replies['batch_reply'] = batch_reply
-        #print('hello', self.observation)
+
         return batch_reply
 
     @abstractmethod
@@ -1794,14 +1819,13 @@ class TorchAgent(ABC, Agent):
         if self.opt.get('warmup_updates', -1) > 0:
             if not hasattr(self, 'warmup_scheduler'):
                 raise RuntimeError('Looks like you forgot to call build_lr_scheduler')
-            if self._is_lr_warming_up() and self.opt.get('lr_scheduler') != 'noam':
+            if self._is_lr_warming_up():
                 self.warmup_scheduler.step(epoch=self._number_training_updates)
 
         if self.opt.get('lr_scheduler') == 'invsqrt' and not self._is_lr_warming_up():
             # training step scheduler
             self.scheduler.step(self._number_training_updates)
-        if self.opt.get('lr_scheduler') == 'noam':
-            self.scheduler.step(self._number_training_updates)
+
         if self.fp16:
             # we've been accumulating grads in fp16 and delaying the fp32 copy update.
             # finally time to perform the update.
@@ -1850,6 +1874,3 @@ class TorchAgent(ABC, Agent):
             total number of trainable parameters in the model.
         """
         return sum(p.numel() for p in self.model.parameters() if p.requires_grad)
-
-    def named_parameters(self):
-        return self.model.named_parameters()

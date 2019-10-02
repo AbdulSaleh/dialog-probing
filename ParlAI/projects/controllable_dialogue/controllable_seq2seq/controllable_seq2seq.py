@@ -330,7 +330,6 @@ class ControllableSeq2seqAgent(TorchAgent):
                 print('[ Loading existing model params from {} ]' ''.format(init_model))
                 states = self.load(init_model)
 
-
             self.model = self.build_model(states=states)
             if self.use_cuda:
                 self.model.cuda()
@@ -340,8 +339,6 @@ class ControllableSeq2seqAgent(TorchAgent):
                     self.model.decoder = self.model.module.decoder
                     self.model.longest_label = self.model.module.longest_label
                     self.model.output = self.model.module.output
-            print("Total parameters: {}".format(self._total_parameters()))
-            print("Trainable parameters:  {}".format(self._trainable_parameters()))
 
         # set up criteria
         if opt.get('numsoftmax', 1) > 1:

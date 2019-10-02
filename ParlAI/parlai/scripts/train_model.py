@@ -513,7 +513,7 @@ class TrainLoop:
             and is_primary_worker()
         ):
             print("[ saving model checkpoint: " + opt['model_file'] + ".checkpoint ]")
-            self.save_model(suffix='-' + str(self.parleys) + '.checkpoint''.checkpoint')
+            self.save_model('.checkpoint')
 
         # send valid metrics to agent if the agent wants them
         if hasattr(self.agent, 'receive_metrics'):
@@ -769,7 +769,7 @@ class TrainLoop:
                             opt['model_file']
                         )
                     )
-                    self.save_model(suffix='-' + str(self.parleys) + '.checkpoint')
+                    self.save_model('.checkpoint')
                     self.save_time.reset()
 
         if not self.saved and is_primary_worker():
