@@ -31,6 +31,12 @@ def setup_args(parser=None):
         parser = ParlaiParser(True, True, 'Evaluate a model')
     parser.add_pytorch_datateacher_args()
     # Get command line arguments
+
+    # Probing command line arguments
+    parser.add_argument('--probe', type=bool, default=False)
+    parser.add_argument('--probe-output-dir', type=str)
+
+    # Other command line arguments
     parser.add_argument('-ne', '--num-examples', type=int, default=-1)
     parser.add_argument('-d', '--display-examples', type='bool', default=False)
     parser.add_argument('-ltim', '--log-every-n-secs', type=float, default=2)
@@ -121,7 +127,7 @@ def eval_model(opt, print_parser=None):
         reports, tasks, micro=opt.get('aggregate_micro', True)
     )
 
-    # print announcments and report
+    # print announcements and report
     print_announcements(opt)
     print(
         '[ Finished evaluating tasks {} using datatype {} ]'.format(

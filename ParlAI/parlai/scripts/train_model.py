@@ -514,6 +514,7 @@ class TrainLoop:
         ):
             print("[ saving model checkpoint: " + opt['model_file'] + ".checkpoint ]")
             self.save_model('.checkpoint')
+            # self.save_model('-' + str(self.parleys) + '.checkpoint')
 
         # send valid metrics to agent if the agent wants them
         if hasattr(self.agent, 'receive_metrics'):

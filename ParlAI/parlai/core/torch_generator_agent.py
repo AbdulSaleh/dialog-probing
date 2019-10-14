@@ -538,6 +538,7 @@ class TorchGeneratorAgent(TorchAgent):
         self.zero_grad()
 
         try:
+            # ABDUL: important function call. This invokes model.forward basically
             loss = self.compute_loss(batch)
             self.metrics['loss'] += loss.item()
             self.backward(loss)
@@ -608,6 +609,71 @@ class TorchGeneratorAgent(TorchAgent):
 
         text = [self._v2t(p) for p in preds] if preds is not None else None
         return Output(text, cand_choices)
+
+    def probe_step(self, batch):
+        """Evaluate a single batch of examples."""
+        if batch.text_vec is None:
+            return
+        bsz = batch.text_vec.size(0)
+        self.model.eval()
+        cand_scores = None
+
+        if batch.label_vec is not None:
+            # calculate loss on targets with teacher forcing
+            loss = self.compute_loss(batch)  # noqa: F841  we need the side effects
+            self.metrics['loss'] += loss.item()
+
+        preds = None
+
+        maxlen = self.label_truncate or 256
+        beam_preds_scores, _ = self._generate(batch, self.beam_size, maxlen)
+        preds, scores = zip(*beam_preds_scores)
+
+        cand_choices = None
+        # TODO: abstract out the scoring here
+        if self.rank_candidates:
+            # compute roughly ppl to rank candidates
+            cand_choices = []
+            encoder_states = self.model.encoder(*self._model_input(batch))
+            for i in range(bsz):
+                num_cands = len(batch.candidate_vecs[i])
+                enc = self.model.reorder_encoder_states(encoder_states, [i] * num_cands)
+                cands, _ = padded_tensor(
+                    batch.candidate_vecs[i], self.NULL_IDX, self.use_cuda
+                )
+                scores, _ = self.model.decode_forced(enc, cands)
+                cand_losses = F.cross_entropy(
+                    scores.view(num_cands * cands.size(1), -1),
+                    cands.view(-1),
+                    reduction='none',
+                ).view(num_cands, cands.size(1))
+                # now cand_losses is cands x seqlen size, but we still need to
+                # check padding and such
+                mask = (cands != self.NULL_IDX).float()
+                cand_scores = (cand_losses * mask).sum(dim=1) / (mask.sum(dim=1) + 1e-9)
+                _, ordering = cand_scores.sort()
+                cand_choices.append([batch.candidates[i][o] for o in ordering])
+
+        text = [self._v2t(p) for p in preds] if preds is not None else None
+        return Output(text, cand_choices)
+
+
+
+    # def probe_step(self, batch):
+    #     """Evaluate a single batch of examples."""
+    #     if batch.text_vec is None:
+    #         return
+    #     bsz = batch.text_vec.size(0)
+    #     # eval mode ok for probing since we probe behavior in inference mode
+    #     self.model.eval()
+    #     cand_scores = None
+    #
+    #     maxlen = self.label_truncate or 256
+    #     probing_vectors = self._probe(batch, maxlen)
+    #
+    #     return probing_vectors
+    #     # return Output(text, cand_choices)
+
 
     def _treesearch_factory(self, device):
         method = self.opt.get('inference', 'greedy')
@@ -683,7 +749,33 @@ class TorchGeneratorAgent(TorchAgent):
         model = self.model
         if isinstance(model, torch.nn.parallel.DistributedDataParallel):
             model = self.model.module
-        encoder_states = model.encoder(*self._model_input(batch))
+        encoder_states = model.encoder(*self._model_input(batch))       # ABDUL: Call model.encoder to get outputs to probe.
+
+        if self.opt.get('probe', False):
+            # might depend on model?
+            token_embeddings, mask = encoder_states
+            masked_embeddings = token_embeddings * mask.float().unsqueeze(2)
+            # [batch size, embedding size]
+            text_lengths = torch.tensor(batch.text_lengths).float().unsqueeze(1).cuda()
+            utterance_embeddings = masked_embeddings.sum(dim=1) / text_lengths
+            print(utterance_embeddings.shape)
+
+        # def printnorm(self, input, output):
+        #     # input is a tuple of packed inputs
+        #     # output is a Tensor. output.data is the Tensor we are interested
+        #     print('Inside ' + self.__class__.__name__ + ' forward')
+        #     print('')
+        #     print('input: ', type(input))
+        #     print('input[0]: ', type(input[0]))
+        #     print('output: ', type(output))
+        #     print('')
+        #     print('input size:', input[0].size())
+        #     print('output size:', output.data.size())
+        #     print('output norm:', output.data.norm())
+        #
+        # model.encoder.register_forward_hook(printnorm)
+
+
         dev = batch.text_vec.device
 
         bsz = len(batch.text_lengths)
@@ -732,6 +824,14 @@ class TorchGeneratorAgent(TorchAgent):
         beam_preds_scores = [b.get_top_hyp() for b in beams]
 
         return beam_preds_scores, beams
+
+    # def _probe(self, batch):
+    # """Modeled after self._generate """
+    #     model = self.model
+    #     if isinstance(model, torch.nn.parallel.DistributedDataParallel):
+    #         model = self.model.module
+    #     encoder_states = model.encoder(*self._model_input(batch))
+    #
 
 
 class _HypothesisTail(object):

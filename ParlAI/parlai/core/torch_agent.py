@@ -731,6 +731,7 @@ class TorchAgent(ABC, Agent):
         self.history = self.build_history()
 
         self.is_training = False  # track whether model is training
+        self.is_probing = False
         self.rank_candidates = opt['rank_candidates']
         self.add_person_tokens = opt.get('person_tokens', False)
         # set interactive mode or not according to options.
@@ -1740,16 +1741,20 @@ class TorchAgent(ABC, Agent):
 
         # check if there are any labels available, if so we will train on them
         self.is_training = any('labels' in obs for obs in observations)
+        self.is_probing = self.opt.get('probe', False)
 
         # create a batch from the vectors
         batch = self.batchify(observations)
 
         if self.is_training:
             output = self.train_step(batch)
+        # elif self.is_probing:
+        #     output = self.probe_step(batch)
         else:
             with torch.no_grad():
                 # save memory and compute by disabling autograd.
                 # use `with torch.enable_grad()` to gain back graidients.
+                # ABDUL: Could introduce probing here
                 output = self.eval_step(batch)
 
         if output is None:
