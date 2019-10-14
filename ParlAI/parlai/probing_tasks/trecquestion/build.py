@@ -4,7 +4,7 @@ import parlai.core.build_data as build_data
 
 def build(opt):
     # get path to data directory
-    dpath = os.path.join(opt['datapath'], 'probing').join('trecquestion')
+    dpath = os.path.join(opt['datapath'], 'probing', 'trecquestion')
 
     # check if data had been previously built
     if not build_data.built(dpath):

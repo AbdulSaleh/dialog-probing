@@ -14,7 +14,7 @@ import os
 def _path(opt):
     # Build the data if it doesn't exist.
     build(opt)
-    return os.path.join(opt['datapath'], 'trecquestion.txt')
+    return os.path.join(opt['datapath'], 'probing', 'trecquestion', 'trecquestion.txt')
 
 
 class DefaultTeacher(ParlAIDialogTeacher):
