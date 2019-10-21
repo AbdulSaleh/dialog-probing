@@ -1741,7 +1741,7 @@ class TorchAgent(ABC, Agent):
 
         # check if there are any labels available, if so we will train on them
         self.is_training = any('labels' in obs for obs in observations)
-        self.is_probing = self.opt.get('probe', False)
+        # self.is_probing = self.opt.get('probe', False)
 
         # create a batch from the vectors
         batch = self.batchify(observations)

@@ -21,7 +21,10 @@ Contains the following utilities:
 from abc import ABC, abstractmethod
 import math
 from operator import attrgetter
+from pathlib import Path
+import pickle
 
+import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -758,23 +761,43 @@ class TorchGeneratorAgent(TorchAgent):
             # [batch size, embedding size]
             text_lengths = torch.tensor(batch.text_lengths).float().unsqueeze(1).cuda()
             utterance_embeddings = masked_embeddings.sum(dim=1) / text_lengths
-            print(utterance_embeddings.shape)
+            utterance_embeddings = utterance_embeddings.cpu().numpy()
 
-        # def printnorm(self, input, output):
-        #     # input is a tuple of packed inputs
-        #     # output is a Tensor. output.data is the Tensor we are interested
-        #     print('Inside ' + self.__class__.__name__ + ' forward')
-        #     print('')
-        #     print('input: ', type(input))
-        #     print('input[0]: ', type(input[0]))
-        #     print('output: ', type(output))
-        #     print('')
-        #     print('input size:', input[0].size())
-        #     print('output size:', output.data.size())
-        #     print('output norm:', output.data.norm())
-        #
-        # model.encoder.register_forward_hook(printnorm)
+            # Create save folder for probing embeddings
+            task_name = self.opt['task'].split('.')[-2]
+            model_dir = Path(self.opt['model_file']).parent
+            probing_dir = model_dir.joinpath('probing')
+            task_dir = probing_dir.joinpath(task_name)
+            save_path = task_dir.joinpath(task_name + '.pkl')
+            if not probing_dir.exists():
+                print("*" * 10, "\n", "*" * 10)
+                print(f"Creating dir to save probing outputs at {probing_dir}")
+                print("*" * 10, "\n", "*" * 10)
+                probing_dir.mkdir()
 
+            if not task_dir.exists():
+                print("*" * 10, "\n", "*" * 10)
+                print(f"Creating dir to save {task_name} probing outputs at {task_dir}")
+                print("*" * 10, "\n", "*" * 10)
+                task_dir.mkdir()
+
+            if not save_path.exists():
+                print("*" * 10, "\n", "*" * 10)
+                print(f"Creating pickle file to save {task_name} probing outputs at {save_path}")
+                print("*" * 10, "\n", "*" * 10)
+                with open(save_path, 'wb') as f:
+                    empty = np.empty((0, utterance_embeddings.shape[1]))
+                    pickle.dump(empty, f)
+
+            # Save probing embeddings
+            with open(save_path, 'rb') as f:
+                previous_embs = pickle.load(f)
+
+            with open(save_path, 'wb') as f:
+                updated_embs = np.vstack((previous_embs, utterance_embeddings))
+                pickle.dump(updated_embs, f)
+
+            # print(utterance_embeddings.shape)
 
         dev = batch.text_vec.device
 
