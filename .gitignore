@@ -10,7 +10,20 @@ Toxicity/*
 !Toxicity/*.py
 !ParlAI/*
 ParlAI/data
-ParlAI/trained
+
+!ParlAI/trained
+
+ParlAI/trained/*
+!ParlAI/trained/dailydialog
+
+ParlAI/trained/dailydialog/*
+!ParlAI/trained/dailydialog/small_default_transformer
+
+ParlAI/trained/dailydialog/small_default_transformer/*
+!ParlAI/trained/dailydialog/small_default_transformer/probing
+
+
+
 model/results
 /fonts/
 *.png
@@ -156,6 +169,8 @@ __pycache__/
 # pickle files
 *.pkl
 *.pickle
+
+!ParlAI/trained/dailydialog/small_default_transformer/probing/trecquestion/*.pkl
 
 ###############################          torchMoji submodule            ###############################
 
