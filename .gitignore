@@ -14,7 +14,7 @@ ParlAI/trained
 model/results
 /fonts/
 *.png
-!ParlAI/trained/dailydialog/small_default_transformer/probing/*
+!ParlAI/trained/dailydialog/small_default_transformer/probing/*.pkl
 
 # Logistics
 /etc/
