@@ -11,7 +11,7 @@ class MLP():
           self,
           d_in,
           d_out,
-          hidden_dim):
+          hidden_dim=100):
     self.model = torch.nn.Sequential(
         torch.nn.Linear(d_in, hidden_dim),
         torch.nn.ReLU(),
