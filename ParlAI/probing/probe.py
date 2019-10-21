@@ -23,8 +23,6 @@ def load_trec_data():
 def eval_trec():
   X = load_trec_data()
   labels = load_trec_labels()
-  # X_train, X_test, y_train, y_test = torch.utils.data.random_split(
-  #     X.numpy(), labels.numpy(), test_size=0.2)
   num_labels = len(np.unique(labels))
   print(f'num labels: {num_labels}')
   model = MLP(300, num_labels)

@@ -18,20 +18,25 @@ class MLP():
         torch.nn.Linear(hidden_dim, d_out),
     )
 
-  def train(self, data, epochs=1000, log_every_n=10):
+  def train(self, data, epochs=1000, log_every_n=10, split_ratio=0.2):
     self.model.double()
     optimizer = optim.Adam(self.model.parameters())
     optimizer.zero_grad()
     self.loss_fn = nn.CrossEntropyLoss()
+    num_examples = data.size()[0]
+    data = data[torch.randperm(num_examples)]  # shuffle data
+    # this is unused atm, TODO figure out how to reincorporate to avoid all the
+    # gross last col indexing
     dataset = TrecData(data)
-    # TODO shuffle before split
-    test_data, train_data = data[:500, :], data[500:, :]
+    split_index = int(data.size()[0] * split_ratio)
+    test_data, train_data = data[:split_index, :], data[split_index:, :]
+    print(f'Training on {num_examples - split_index}, Testing on {split_index}')
     for epoch in range(epochs):
       optimizer.zero_grad()
       trainloader = torch.utils.data.DataLoader(
           train_data, batch_size=64, shuffle=True)
       loss = 0
-      for step, example in enumerate(trainloader):
+      for example in trainloader:
         x = example[:, :-1]
         y = example[:, -1].long()
         y_pred = self.model(x)
