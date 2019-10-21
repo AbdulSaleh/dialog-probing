@@ -1,5 +1,8 @@
 """
 Script to process TREC Question Classification dataset into ParlAI format.
+
+Note that this script should be manually run by the user and not through ParlAI
+to process the data, and hence _parse.py instead of parse.py.
 """
 from pathlib import Path
 
