@@ -18,40 +18,46 @@ class MLP():
         torch.nn.Linear(hidden_dim, d_out),
     )
 
-  def train(self, train_x, train_y, test_x, test_y, epochs=15, log_every_n=100):
+  def train(self, data, epochs=1000, log_every_n=10):
+    self.model.double()
     optimizer = optim.Adam(self.model.parameters())
     optimizer.zero_grad()
     self.loss_fn = nn.CrossEntropyLoss()
-    traindata = TrecData(train_x, train_y)
-
-    for epoch in epochs:
+    dataset = TrecData(data)
+    # TODO shuffle before split
+    test_data, train_data = data[:500, :], data[500:, :]
+    for epoch in range(epochs):
       optimizer.zero_grad()
       trainloader = torch.utils.data.DataLoader(
-          traindata, batch_size=64, shuffle=True)
+          train_data, batch_size=64, shuffle=True)
       loss = 0
-      for step, (x, y) in enumerate(trainloader):
+      for step, example in enumerate(trainloader):
+        x = example[:, :-1]
+        y = example[:, -1].long()
         y_pred = self.model(x)
-        loss = loss_fn(y_pred, y)
+        loss = self.loss_fn(y_pred, y)
         loss.backward()
         optimizer.step()
-      print(f'Train loss: {loss}')
-      self.evaluate(test_x, test_y)
+      if epoch % 10 == 0:
+        print(f'Epoch: {epoch}')
+        print(f'Train loss: {loss}')
+        self.evaluate(test_data)
 
-  def evaluate(self, test_x, test_y):
-    y_pred = self.model(test_x)
-    loss = self.loss_fn(y_pred, test_y)
+  def evaluate(self, test_data):
+    y_pred = self.model(test_data[:, :-1])
+    loss = self.loss_fn(y_pred, test_data[:, -1].long())
     print(f'Test loss: {loss}')
 
 
 class TrecData(Dataset):
-  def __init__(self, x, y):
+  def __init__(self, data):
     super(TrecData, self).__init__()
-    assert x.shape[0] == y.shape[0]
-    self.x = x
-    self.y = y
+    self.x = data[:, :-1]
+    self.y = data[:, -1]
+    assert self.x.shape[0] == self.y.shape[0]
 
   def __len__(self):
     return self.y.shape[0]
 
   def __getitem__(self, index):
-    return self.x[index], self.y[index]
+    return self.x[index], self.y[index].long()
