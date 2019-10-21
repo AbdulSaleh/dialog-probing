@@ -15,7 +15,7 @@ question_path = data_dir.joinpath('trecquestion.txt')
 label_path = data_dir.joinpath('labels.txt')
 
 
-data = open(data_path, 'r').readlines()
+data = open(data_path, 'r', encoding='ISO-8859-1').readlines()
 question_file = open(question_path, 'w')
 label_file = open(label_path, 'w')
 
