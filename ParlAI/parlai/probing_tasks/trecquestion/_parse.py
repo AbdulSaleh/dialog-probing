@@ -5,24 +5,41 @@ Note that this script should be manually run by the user and not through ParlAI
 to process the data, and hence _parse.py instead of parse.py.
 """
 from pathlib import Path
+import pickle
 
-
-# Call from ParlAI directory
-project_dir = Path(__file__).parent.parent.parent.parent
+# Load data
+project_dir = Path(__file__).resolve().parent.parent.parent.parent
 data_dir = Path(project_dir, 'data', 'probing', 'trecquestion')
-data_path = data_dir.joinpath('train_5500.label')
+train_path = data_dir.joinpath('train_5500.label')
+test_path = data_dir.joinpath('TREC_10.label')
+
+train = open(train_path, 'r', encoding='ISO-8859-1').readlines()
+test = open(test_path, 'r', encoding='ISO-8859-1').readlines()
+data = train + test
+
+# Save files
 question_path = data_dir.joinpath('trecquestion.txt')
 label_path = data_dir.joinpath('labels.txt')
+info_path = data_dir.joinpath('info.pkl')
 
-
-data = open(data_path, 'r', encoding='ISO-8859-1').readlines()
 question_file = open(question_path, 'w')
 label_file = open(label_path, 'w')
+info_file = open(info_path, 'wb')
 
-
+# Process data
+classes = set()
 for line in data:
     label = line[:line.index(' ')].strip()
     question = line[line.index(' ') + 1:].rstrip()
 
     label_file.write(label + '\n')
     question_file.write('text:' + question + '\tlabels: \tepisode_done:True\n')
+
+    classes.add(label)
+
+# Save data info
+info = {'n_train': len(train),
+        'n_test': len(test),
+        'n_classes': len(classes)}
+
+pickle.dump(info, info_file)
