@@ -23,8 +23,6 @@ if __name__ == "__main__":
 
     # Load GloVe
     glove_path = project_dir.joinpath('data', 'models', 'glove_vectors', 'glove.840B.300d.txt')
-    if not glove_path.exists():
-        raise FileNotFoundError(glove_path)
     glove = load_glove(glove_path)
 
     # Create save dir for embeddings
