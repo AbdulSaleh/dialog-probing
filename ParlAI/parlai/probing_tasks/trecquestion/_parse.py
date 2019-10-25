@@ -20,26 +20,14 @@ data = train + test
 # Save files
 question_path = data_dir.joinpath('trecquestion.txt')
 label_path = data_dir.joinpath('labels.txt')
-info_path = data_dir.joinpath('info.pkl')
 
 question_file = open(question_path, 'w')
 label_file = open(label_path, 'w')
-info_file = open(info_path, 'wb')
 
 # Process data
-classes = set()
 for line in data:
     label = line[:line.index(' ')].strip()
     question = line[line.index(' ') + 1:].rstrip()
 
     label_file.write(label + '\n')
     question_file.write('text:' + question + '\tlabels: \tepisode_done:True\n')
-
-    classes.add(label)
-
-# Save data info
-info = {'n_train': len(train),
-        'n_test': len(test),
-        'n_classes': len(classes)}
-
-pickle.dump(info, info_file)
