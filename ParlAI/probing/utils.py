@@ -50,7 +50,7 @@ def encode_sent(s, glove):
 
 
 def encode_glove(sents, glove):
-    emb_size = glove['hi'].shape[0]
+    emb_size = len(glove['hi'])
     embs = np.zeros((len(sents), emb_size))
     for i, s in enumerate(sents):
         embs[i] = encode_sent(s, glove)
