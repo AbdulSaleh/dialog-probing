@@ -31,7 +31,7 @@ if __name__ == "__main__":
         print('*' * 10, '\n', '*' * 10)
         print(f'Creating dir to save GloVe bag of vectors embeddings at {save_dir}')
         print('*' * 10, '\n', '*' * 10)
-        save_dir.mkdir()
+        save_dir.mkdir(parents=True)
 
     task_name = opt['task']
     task_dir = save_dir.joinpath(task_name)
@@ -39,7 +39,7 @@ if __name__ == "__main__":
         print('*' * 10, '\n', '*' * 10)
         print(f'Creating dir to save {task_name} probing outputs at {task_dir}')
         print('*' * 10, '\n', '*' * 10)
-        task_dir.mkdir()
+        task_dir.mkdir(parents=True)
 
     # Create save file
     save_path = task_dir.joinpath(task_name + '.pkl')
