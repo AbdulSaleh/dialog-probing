@@ -24,7 +24,7 @@ def load_glove(path):
     print("Loading GloVe Model")
     with open(path, 'r', encoding='utf8') as f:
         embs = {}
-        for line in tqdm(f):
+        for line in tqdm(f, total=2.2*(10**6)):
             splitLine = line.split(' ')
             word = splitLine[0]
             embedding = np.array([float(val) for val in splitLine[1:]])
@@ -34,7 +34,7 @@ def load_glove(path):
     return embs
 
 
-def encode_glove(s, glove):
+def encode_sent(s, glove):
     s = contractions.fix(s)
     words = re_tokenize(s)
 
@@ -42,7 +42,6 @@ def encode_glove(s, glove):
     for w in words:
         try:
             emb += glove[w]
-
         except KeyError:
             # word not found in glove
             continue
@@ -50,3 +49,10 @@ def encode_glove(s, glove):
     return emb / len(words)
 
 
+def encode_glove(sents, glove):
+    emb_size = glove['hi'].shape[0]
+    embs = np.zeros((len(sents), emb_size))
+    for i, s in enumerate(sents):
+        embs[i] = encode_sent(s, glove)
+
+    return embs
