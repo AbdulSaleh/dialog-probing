@@ -23,8 +23,12 @@ def setup_args():
                         help='Usage: -t trecquestion\nOnly compatible with names in probing_tasks')
 
     parser.add_argument('-m', '--model', type=str, required=True,
-                        help='Usage: -m GloVe\nModel directory of embeddings to be probed.' 
+                        help='Usage: -m GloVe or -m dailydialg\default_transformer\n'
+                             'Model directory of embeddings to be probed.' 
                              'Assumes models saved to ParlAI\\trained')
+
+    parser.add_argument('-ep', '--max_epochs', type=int, default=100)
+
     return vars(parser.parse_args())
 
 
@@ -78,7 +82,7 @@ if __name__ == '__main__':
         module__dropout=0.5,
         device='cuda',
         # Training
-        max_epochs=250,
+        max_epochs=opt['max_epochs'],
         batch_size=128,
         #callbacks=[Checkpoint(monitor='valid_acc_best')],
         # train_split is validation data
@@ -111,6 +115,10 @@ if __name__ == '__main__':
                'task': task_name,
                'architecture': str(net),
                'history': net.history}
+
+    print(f'Test acc: {test_acc}',
+          f'Valid acc: {val_acc}',
+          f'Train acc: {train_acc}')
 
     results_path = project_dir.joinpath('trained', model, 'probing',
                                         task_name, 'training_results.pkl')
