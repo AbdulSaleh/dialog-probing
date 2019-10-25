@@ -78,7 +78,7 @@ if __name__ == '__main__':
         module__dropout=0.5,
         device='cuda',
         # Training
-        max_epochs=50,
+        max_epochs=250,
         batch_size=128,
         #callbacks=[Checkpoint(monitor='valid_acc_best')],
         # train_split is validation data
