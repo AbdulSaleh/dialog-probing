@@ -28,7 +28,7 @@ info_file = open(info_path, 'wb')
 
 # Process data
 for line in data:
-    label = line[:line.index(' ')].strip()
+    label = line[:line.index(' ')].strip().split(':')[0]
     question = line[line.index(' ') + 1:].rstrip()
 
     label_file.write(label + '\n')
