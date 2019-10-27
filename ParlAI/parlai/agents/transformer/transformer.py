@@ -288,4 +288,8 @@ class TransformerGeneratorAgent(TorchGeneratorAgent):
             self._copy_embeddings(
                 model.encoder.embeddings.weight, self.opt['embedding_type']
             )
+        if self.opt['embedding_type'].endswith('fixed'):
+            print("Transformer: fixing embedding weights")
+            model.encoder.embeddings.weight.requires_grad = False
+            model.decoder.embeddings.weight.requires_grad = False
         return model
