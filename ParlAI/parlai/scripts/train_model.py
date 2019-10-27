@@ -152,6 +152,16 @@ def setup_args(parser=None) -> ParlaiParser:
         help='how to optimize validation metric (max or min)',
     )
     train.add_argument(
+        '-sh',
+        '--shuffle',
+        default='ordered',
+        type=str,
+        choices=['ordered', 'within', 'across'],
+        help='whether and how to shuffle training data. "within" shuffles turns within conversations'
+        'and "across" shuffles turns across all conversation. "ordered" does neither and is the default.',
+        hidden=True,
+    )
+    train.add_argument(
         '-vcut',
         '--validation-cutoff',
         type=float,
