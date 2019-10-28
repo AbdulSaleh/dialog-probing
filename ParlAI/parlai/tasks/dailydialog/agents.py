@@ -22,9 +22,9 @@ once acting as Speaker 2.
 
 import os
 import json
+import random
 from parlai.core.teachers import FixedDialogTeacher
 from .build import build
-import random
 
 
 START_ENTRY = {'text': '__SILENCE__', 'emotion': 'no_emotion', 'act': 'no_act'}
@@ -46,20 +46,19 @@ class Convai2Teacher(FixedDialogTeacher):
                 raise Exception('Cannot shuffle when not training')
             elif opt['shuffle'] == 'within':
                 print('***\nShuffling train data within conversations\n***')
-                for conv in self.data: 
-                    random.Random(0).shuffle(conv['dialogue'])
+                random.seed(1984)
+                for conv in self.data:
+                    random.shuffle(conv['dialogue'])
             elif opt['shuffle'] == 'across':
                 print('***\nShuffling train data across conversations\n***')
                 turns = [turn for conv in self.data for turn in conv['dialogue']]
-                random.Random(0).shuffle(turns)
+                random.seed(1984)
+                random.shuffle(turns)
                 for conv in self.data:
                     for i in range(len(conv['dialogue'])):
                         conv['dialogue'][i] = turns.pop()
             elif opt['shuffle'] == 'ordered':
                 pass
-            else:
-                raise ValueError('Shuffle option must be one of "within", "across", or "ordered"')
-                
 
         self.num_exs = sum(len(d['dialogue']) for d in self.data)
 
