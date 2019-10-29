@@ -9,6 +9,17 @@ and the tags associated with them.
 
 task_list = [
     {
+        "id": "wikitext-2",
+        "display_name": "wikitext-2",
+        "task": "wikitext-2",
+        "tags": ["All", "ChitChat"],
+        "description": (
+            "Wikitext-2 dataset for pretraining from: "
+            "https://blog.einstein.ai/the-wikitext-long-term-dependency-language-modeling-dataset/ "
+            "Uses standard train, valid, test splits. Train set contains 2M tokens."
+        ),
+    },
+    {
         "id": "AQuA",
         "display_name": "AQuA",
         "task": "aqua",
