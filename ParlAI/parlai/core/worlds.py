@@ -750,7 +750,7 @@ class BatchWorld(World):
     def display(self):
         """Display the full batch."""
         s = "[--batchsize " + str(len(self.worlds)) + "--]\n"
-        for i, w in enumerate(self.worlds):
+        for i, w in enumerate(self.worlds[:5]):
             s += "[batch world " + str(i) + ":]\n"
             s += w.display() + '\n'
         s += "[--end of batch--]"
