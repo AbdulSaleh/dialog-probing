@@ -9,7 +9,7 @@ def _path(opt):
     # Build the data if it doesn't exist.
     build(opt)
     dt = opt['datatype'].split(':')[0]
-    return os.path.join(opt['datapath'], 'wikitext-2', dt + '.txt')
+    return os.path.join(opt['datapath'], 'wikitext-103', dt + '.txt')
 
 
 class DefaultTeacher(ParlAIDialogTeacher):
