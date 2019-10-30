@@ -43,7 +43,7 @@ class Convai2Teacher(FixedDialogTeacher):
 
         if 'shuffle' in opt:
             if opt.get('datatype', '').split(':')[0] != 'train':
-                raise Exception('Cannot shuffle when not training')
+                print('***\nSkipping shuffling since not training\n***')
             elif opt['shuffle'] == 'within':
                 print('***\nShuffling train data within conversations\n***')
                 random.seed(1984)
