@@ -1,4 +1,4 @@
-"""Script to download and process wikitext-2 in ParlAI format."""
+"""Script to download and process wikitext-103 in ParlAI format."""
 
 import os
 from zipfile import ZipFile
@@ -34,7 +34,7 @@ def ParlAI_format(path):
     # Iterate over train, test, and valid data
     for file in data_paths:
         split = file.stem.split('.')[1]
-        print(f'***\nProcessing {split} wikitext-2 split!\n***')
+        print(f'***\nProcessing {split} wikitext-103 split!\n***')
 
         output = open(path.joinpath(split + '.txt'), 'w')
         data = open(file, encoding='utf-8')
@@ -60,15 +60,15 @@ def ParlAI_format(path):
 
 def build(opt):
     # get path to data directory
-    dpath = os.path.join(opt['datapath'], 'wikitext-2')
+    dpath = os.path.join(opt['datapath'], 'wikitext-103')
 
     # check if data had been previously built
     if not build_data.built(dpath):
         build_data.make_dir(dpath)
 
         # Download data
-        url = 'https://s3.amazonaws.com/research.metamind.io/wikitext/wikitext-2-v1.zip'
-        fname = 'wikitext-2.zip'
+        url = 'https://s3.amazonaws.com/research.metamind.io/wikitext/wikitext-103-v1.zip'
+        fname = 'wikitext-103.zip'
         build_data.download(url, dpath, fname)
 
         # Extract data
