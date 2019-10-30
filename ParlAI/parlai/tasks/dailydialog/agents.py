@@ -42,8 +42,9 @@ class Convai2Teacher(FixedDialogTeacher):
             self._setup_data(fold)
 
         if 'shuffle' in opt:
-            if opt.get('datatype', '').split(':')[0] != 'train':
-                print('***\nSkipping shuffling since not training\n***')
+            if opt.get('datatype', '').split(':')[0] != 'train' or opt['shuffle'] == 'ordered':
+                # Do not shuffle if validation
+                pass
             elif opt['shuffle'] == 'within':
                 print('***\nShuffling train data within conversations\n***')
                 random.seed(1984)
@@ -57,8 +58,6 @@ class Convai2Teacher(FixedDialogTeacher):
                 for conv in self.data:
                     for i in range(len(conv['dialogue'])):
                         conv['dialogue'][i] = turns.pop()
-            elif opt['shuffle'] == 'ordered':
-                pass
 
         self.num_exs = sum(len(d['dialogue']) for d in self.data)
 
