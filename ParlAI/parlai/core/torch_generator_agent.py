@@ -752,14 +752,24 @@ class TorchGeneratorAgent(TorchAgent):
         model = self.model
         if isinstance(model, torch.nn.parallel.DistributedDataParallel):
             model = self.model.module
-        encoder_states = model.encoder(*self._model_input(batch))       # ABDUL: Call model.encoder to get outputs to probe.
+        encoder_states = model.encoder(*self._model_input(batch))  # ABDUL: Call model.encoder to get outputs to probe.
 
         if self.opt.get('probe', False):
             # might depend on model?
-            token_embeddings, mask = encoder_states
+            if len(encoder_states) == 3:  # *SC* if it's an RNNencoder and outputs (output, hidden, mask)
+                token_embeddings, hidden_t, mask = encoder_states
+            elif len(encoder_states) == 2:  # *SC* else if it outputs (output, mask)
+                token_embeddings, mask = encoder_states
+                hidden_t = None
             masked_embeddings = token_embeddings * mask.float().unsqueeze(2)
             # [batch size, embedding size]
-            text_lengths = torch.tensor(batch.text_lengths).float().unsqueeze(1).cuda()
+            if self.use_cuda:
+                text_lengths = torch.tensor(batch.text_lengths).float().unsqueeze(1).cuda()
+            else:
+                text_lengths = torch.tensor(batch.text_lengths).float().unsqueeze(1)
+            if not hidden_t is None:
+                hidden_t_both = torch.cat((hidden_t[0], hidden_t[1]), dim=2)
+                masked_embeddings = torch.cat((masked_embeddings, hidden_t_both), dim=1)
             utterance_embeddings = masked_embeddings.sum(dim=1) / text_lengths
             utterance_embeddings = utterance_embeddings.cpu().numpy()
 
