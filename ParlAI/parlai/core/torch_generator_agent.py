@@ -763,7 +763,8 @@ class TorchGeneratorAgent(TorchAgent):
             model_name = type(model).__name__
             if model_name == 'Seq2seq' and model.attn_type == 'none':
                 # enc_outputs: [batch size, max seq len, hidden dim * 2], since bidirectional
-                # hidden: ([batch size, num layers, hidden dim], [batch size, num layers, hidden dim]), since (h, c)
+                # hidden: ([batch size, num layers, hidden dim],
+                #          [batch size, num layers, hidden dim]), since (h, c)
                 # mask: [batch size, max seq len]
                 enc_outputs, hidden, mask = encoder_states
                 if self.opt['average_utterance']:
@@ -771,9 +772,11 @@ class TorchGeneratorAgent(TorchAgent):
                     raise NotImplementedError
                 else:
                     # Use final hidden states (h, c)
-                    # hidden: ([batch size, hidden dim * num layers], [batch size, hidden dim * num layers])
-                    hidden = (hidden[0].reshape(self.opt['batchsize'], -1),
-                              hidden[1].reshape(self.opt['batchsize'], -1))
+                    # hidden: ([batch size, hidden dim * num layers],
+                    #          [batch size, hidden dim * num layers])
+                    bsz = hidden[0].shape[0]
+                    hidden = (hidden[0].reshape(bsz, -1),
+                              hidden[1].reshape(bsz, -1))
 
                     # hidden: [batch size, hidden dim * num layers * 2]
                     hidden = torch.cat(hidden, dim=1)
