@@ -752,26 +752,55 @@ class TorchGeneratorAgent(TorchAgent):
         model = self.model
         if isinstance(model, torch.nn.parallel.DistributedDataParallel):
             model = self.model.module
-        encoder_states = model.encoder(*self._model_input(batch))  # ABDUL: Call model.encoder to get outputs to probe.
+        # Get outputs to probe.
+        encoder_states = model.encoder(*self._model_input(batch))
+
+        text_lengths = torch.tensor(batch.text_lengths).float().unsqueeze(1)
+        if self.use_cuda:
+            text_lengths = text_lengths.cuda()
 
         if self.opt.get('probe', False):
-            # might depend on model?
-            if len(encoder_states) == 3:  # *SC* if it's an RNNencoder and outputs (output, hidden, mask)
-                token_embeddings, hidden_t, mask = encoder_states
-            elif len(encoder_states) == 2:  # *SC* else if it outputs (output, mask)
-                token_embeddings, mask = encoder_states
-                hidden_t = None
-            masked_embeddings = token_embeddings * mask.float().unsqueeze(2)
-            # [batch size, embedding size]
-            if self.use_cuda:
-                text_lengths = torch.tensor(batch.text_lengths).float().unsqueeze(1).cuda()
-            else:
-                text_lengths = torch.tensor(batch.text_lengths).float().unsqueeze(1)
-            if not hidden_t is None:
-                hidden_t_both = torch.cat((hidden_t[0], hidden_t[1]), dim=2)
-                masked_embeddings = torch.cat((masked_embeddings, hidden_t_both), dim=1)
-            utterance_embeddings = masked_embeddings.sum(dim=1) / text_lengths
-            utterance_embeddings = utterance_embeddings.cpu().numpy()
+            model_name = type(model).__name__
+            if model_name == 'Seq2seq' and model.attn_type == 'none':
+                # enc_outputs: [batch size, max seq len, hidden dim * 2], since bidirectional
+                # hidden: ([batch size, num layers, hidden dim], [batch size, num layers, hidden dim]), since (h, c)
+                # mask: [batch size, max seq len]
+                enc_outputs, hidden, mask = encoder_states
+                if self.opt['average_utterance']:
+                    # Average encoder outputs
+                    raise NotImplementedError
+                else:
+                    # Use final hidden states (h, c)
+                    # hidden: ([batch size, hidden dim * num layers], [batch size, hidden dim * num layers])
+                    hidden = (hidden[0].reshape(self.opt['batchsize'], -1),
+                              hidden[1].reshape(self.opt['batchsize'], -1))
+
+                    # hidden: [batch size, hidden dim * num layers * 2]
+                    hidden = torch.cat(hidden, dim=1)
+
+                    # utterance_embeddings: [batch size, hidden dim * num layers * 2]
+                    utterance_embeddings = torch.zeros_like(hidden).cuda()
+
+                    # Sort embeddings into original order. Undo pack padded sequence
+                    for i, j in enumerate(batch['valid_indices']):
+                        utterance_embeddings[j] = hidden[i]
+
+                    utterance_embeddings = utterance_embeddings.cpu().numpy()
+
+            elif model_name == 'Seq2seq' and model.attn_type != 'none':
+                raise NotImplementedError
+
+            elif model_name == 'TransformerGeneratorModel':
+                # enc_outputs: [batch size, max seq len, embedding size]
+                # mask: [batch size, max seq len]
+                enc_outputs, mask = encoder_states
+
+                # masked: [batch size, max seq len, embedding size]
+                masked = enc_outputs * mask.float().unsqueeze(2)
+
+                # utterance_embeddings: [batch size, embedding size]
+                utterance_embeddings = masked.sum(dim=1) / text_lengths
+                utterance_embeddings = utterance_embeddings.cpu().numpy()
 
             # Create save folder for probing embeddings
             task_name = self.opt['task'].split('.')[-2]
