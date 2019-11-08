@@ -772,8 +772,15 @@ class TorchGeneratorAgent(TorchAgent):
                     # masked: [batch size, max seq len, hidden dim * 2]
                     masked = enc_outputs * mask.float().unsqueeze(2)
 
-                    # utterance_embeddings: [batch size, embedding size]
-                    utterance_embeddings = masked.sum(dim=1) / text_lengths
+                    # _utterance_embeddings: [batch size, hidden dim * num layers * 2]
+                    _utterance_embeddings = masked.sum(dim=1) / text_lengths
+
+                    utterance_embeddings = torch.zeros_like(_utterance_embeddings).cuda()
+
+                    # Sort embeddings into original order. Undo pack padded sequence
+                    for i, j in enumerate(batch['valid_indices']):
+                        utterance_embeddings[j] = _utterance_embeddings[i]
+
                     utterance_embeddings = utterance_embeddings.cpu().numpy()
 
                 else:
