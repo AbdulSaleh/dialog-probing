@@ -1,5 +1,6 @@
 """Loads embeddings and evaluates their performance on a given probing task
 """
+import json
 import pickle
 import argparse
 from pathlib import Path
@@ -24,7 +25,7 @@ def setup_args():
 
     parser.add_argument('-m', '--model', type=str, required=True,
                         help='Usage: -m GloVe or -m dailydialg\default_transformer\n'
-                             'Model directory of embeddings to be probed.' 
+                             'Model directory of embeddings to be probed.'
                              'Assumes models saved to ParlAI\\trained')
 
     parser.add_argument('-ep', '--max_epochs', type=int, default=100)
@@ -54,8 +55,8 @@ if __name__ == '__main__':
     y = y.astype(np.int64)
 
     # Load info
-    info_path = project_dir.joinpath('data', 'probing', task_name, 'info.pkl')
-    info = pickle.load(open(info_path, 'rb'))
+    info_path = project_dir.joinpath('data', 'probing', task_name, 'info.json')
+    info = open(info_path, 'rb')
     n_train = info['n_train']
 
     # Split data
@@ -121,9 +122,6 @@ if __name__ == '__main__':
           f'Train acc: {train_acc}')
 
     results_path = project_dir.joinpath('trained', model, 'probing',
-                                        task_name, 'training_results.pkl')
+                                        task_name, 'training_results.json')
     print(f'Saving training results to {results_path}')
-    pickle.dump(results, open(results_path, 'wb'))
-
-
-
+    json.dump(results, open(results_path, 'wb'))
