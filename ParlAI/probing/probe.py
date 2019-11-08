@@ -55,8 +55,8 @@ if __name__ == '__main__':
     y = y.astype(np.int64)
 
     # Load info
-    info_path = project_dir.joinpath('data', 'probing', task_name, 'info.pkl')
-    info = pickle.load(open(info_path, 'rb'))
+    info_path = project_dir.joinpath('data', 'probing', task_name, 'info.json')
+    info = open(info_path, 'rb')
     n_train = info['n_train']
 
     # Split data
