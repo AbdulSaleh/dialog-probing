@@ -762,13 +762,14 @@ class TorchGeneratorAgent(TorchAgent):
         if self.opt.get('probe', False):
             model_name = type(model).__name__
             if model_name == 'Seq2seq':
-                # enc_outputs: [batch size, max seq len, hidden dim * 2], since bidirectional
+                # enc_outputs: [batch size, max seq len, hidden dim * 2] ~ since bidirectional
                 # hidden: ([batch size, num layers, hidden dim],
-                #          [batch size, num layers, hidden dim]), since (h, c)
+                #          [batch size, num layers, hidden dim]) ~ (h, c)
                 # mask: [batch size, max seq len]
                 enc_outputs, hidden, mask = encoder_states
-                if self.opt['average_utterance'] or model.attn_type != 'none':
-                    # Average encoder outputs
+                attention = (model.attn_type != 'none')
+                if attention or self.opt['average_utterance']:
+                    # Average encoder outputs.
                     # masked: [batch size, max seq len, hidden dim * 2]
                     masked = enc_outputs * mask.float().unsqueeze(2)
 
@@ -803,9 +804,6 @@ class TorchGeneratorAgent(TorchAgent):
 
                     utterance_embeddings = utterance_embeddings.cpu().numpy()
 
-            elif model_name == 'Seq2seq' and model.attn_type != 'none':
-                raise NotImplementedError
-
             elif model_name == 'TransformerGeneratorModel':
                 # enc_outputs: [batch size, max seq len, embedding size]
                 # mask: [batch size, max seq len]
@@ -817,6 +815,9 @@ class TorchGeneratorAgent(TorchAgent):
                 # utterance_embeddings: [batch size, embedding size]
                 utterance_embeddings = masked.sum(dim=1) / text_lengths
                 utterance_embeddings = utterance_embeddings.cpu().numpy()
+
+            else:
+                raise NotImplementedError(f'{model_name} not supported')
 
             # Create save folder for probing embeddings
             task_name = self.opt['task'].split('.')[-2]
