@@ -121,8 +121,9 @@ def _eval_single_world(opt, agent, task):
         if save_path.exists():
             warnings.warn(f"\nSave file already exists at {save_path}!!\n"
                           "Do you wish to overwrite? (y/n)", RuntimeWarning)
-            overwrite = input('Overwrite? (y/n)')
+
             while True:
+                overwrite = input('Overwrite? (y/n)')
                 if overwrite == 'n':
                     exit('User terminated')
                 elif overwrite == 'y':
