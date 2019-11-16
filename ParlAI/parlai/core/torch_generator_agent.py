@@ -819,41 +819,12 @@ class TorchGeneratorAgent(TorchAgent):
             else:
                 raise NotImplementedError(f'{model_name} not supported')
 
-            # Create save folder for probing embeddings
-            task_name = self.opt['task'].split('.')[-2]
-            model_dir = Path(self.opt['model_file']).parent
-            probing_dir = model_dir.joinpath('probing')
-            task_dir = probing_dir.joinpath(task_name)
-            save_path = task_dir.joinpath(task_name + '.pkl')
-            if not probing_dir.exists():
-                print("*" * 10, "\n", "*" * 10)
-                print(f"Creating dir to save probing outputs at {probing_dir}")
-                print("*" * 10, "\n", "*" * 10)
-                probing_dir.mkdir()
-
-            if not task_dir.exists():
-                print("*" * 10, "\n", "*" * 10)
-                print(f"Creating dir to save {task_name} probing outputs at {task_dir}")
-                print("*" * 10, "\n", "*" * 10)
-                task_dir.mkdir()
-
-            if not save_path.exists():
-                print("*" * 10, "\n", "*" * 10)
-                print(f"Creating pickle file to save {task_name} probing outputs at {save_path}")
-                print("*" * 10, "\n", "*" * 10)
-                with open(save_path, 'wb') as f:
-                    empty = np.empty((0, utterance_embeddings.shape[1]))
-                    pickle.dump(empty, f)
-
-            # Save probing embeddings
-            with open(save_path, 'rb') as f:
-                previous_embs = pickle.load(f)
-
-            with open(save_path, 'wb') as f:
-                updated_embs = np.vstack((previous_embs, utterance_embeddings))
-                pickle.dump(updated_embs, f)
-
-            # print(utterance_embeddings.shape)
+            # Store probing outputs
+            try:
+                self.probing_outputs = np.vstack((self.probing_outputs, utterance_embeddings))
+            except:
+                # In case probing_outputs empty array
+                self.probing_outputs = utterance_embeddings
 
         dev = batch.text_vec.device
 

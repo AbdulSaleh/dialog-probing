@@ -48,6 +48,7 @@ import time
 
 from functools import lru_cache
 
+import numpy as np
 try:
     from torch.multiprocessing import Process, Value, Condition, Semaphore
 except ImportError:
@@ -655,6 +656,11 @@ class BatchWorld(World):
         self.random = opt.get('datatype', None) == 'train'
         self.world = world
         self.worlds = []
+
+        if self.opt.get('probe', False):
+            # Add reference to probing outputs list
+            self.world.get_agents()[1].probing_outputs = np.array([])
+
         for i in range(opt['batchsize']):
             # make sure that any opt dicts in shared have batchindex set to i
             # this lets all shared agents know which batchindex they have,

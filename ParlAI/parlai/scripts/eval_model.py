@@ -16,6 +16,10 @@ Examples
   python eval_model.py -t "#CornellMovie" -m "ir_baseline" -mp "-lp 0.5"
 """
 
+import sys
+import warnings
+import pickle
+from pathlib import Path
 from parlai.core.params import ParlaiParser, print_announcements
 from parlai.core.agents import create_agent
 from parlai.core.logs import TensorboardLogger
@@ -94,6 +98,42 @@ def _eval_single_world(opt, agent, task):
             report = world.report()
             text, report = log_time.log(report['exs'], world.num_examples(), report)
             print(text)
+
+    if world.opt.get('probe', False):
+        # Create save folder for probing outputs
+        task_name = world.opt['task'].split('.')[-2]
+        model_dir = Path(world.opt['model_file']).parent
+        probing_dir = model_dir.joinpath('probing')
+        task_dir = probing_dir.joinpath(task_name)
+        save_path = task_dir.joinpath(task_name + '.pkl')
+        if not probing_dir.exists():
+            print("*" * 10, "\n", "*" * 10)
+            print(f"Creating dir to save probing outputs at {probing_dir}")
+            print("*" * 10, "\n", "*" * 10)
+            probing_dir.mkdir()
+
+        if not task_dir.exists():
+            print("*" * 10, "\n", "*" * 10)
+            print(f"Creating dir to save {task_name} probing outputs at {task_dir}")
+            print("*" * 10, "\n", "*" * 10)
+            task_dir.mkdir()
+
+        if save_path.exists():
+            warnings.warn(f"\nSave file already exists at {save_path}!!\n"
+                          "Do you wish to overwrite? (y/n)", RuntimeWarning)
+            overwrite = input('Overwrite? (y/n)')
+            while True:
+                if overwrite == 'n':
+                    exit('User terminated')
+                elif overwrite == 'y':
+                    break
+
+        print("*" * 10, "\n", "*" * 10)
+        print(f"Creating pickle file to save {task_name} probing outputs at {save_path}")
+        print("*" * 10, "\n", "*" * 10)
+        # Save probing outputs
+        with open(save_path, 'wb') as f:
+            pickle.dump(world.world.agents[1].probing_outputs, f)
 
     report = world.report()
     world.reset()
