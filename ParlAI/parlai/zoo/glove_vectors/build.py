@@ -19,3 +19,6 @@ def download(datapath):
         use_model_type=False,
         path="http://nlp.stanford.edu/data",
     )
+
+if __name__ == "__main__":
+    download('data')
