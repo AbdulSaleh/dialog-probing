@@ -62,11 +62,21 @@ if __name__ == '__main__':
     # Split data
     X_train = X[:n_train]
     y_train = y[:n_train]
-    X_test = X[n_train:]
-    y_test = y[n_train:]
-    X_train, X_val, y_train, y_val = train_test_split(
-        X_train, y_train, test_size=0.1, stratify=y_train, random_state=1984
-    )
+
+    if 'n_dev' in info:
+        # Use pre defined dev split
+        n_dev = info['n_dev']
+        X_val = X[n_train: n_train+n_dev]
+        y_val = X[n_train: n_train+n_dev]
+        X_test = X[n_train+n_dev:]
+        y_test = X[n_train+n_dev:]
+    else:
+        # Create custom stratified dev split from train
+        X_test = X[n_train:]
+        y_test = y[n_train:]
+        X_train, X_val, y_train, y_val = train_test_split(
+            X_train, y_train, test_size=0.1, stratify=y_train, random_state=1984
+        )
 
     # Number of features, and number of classes
     input_dim = len(X[0])
