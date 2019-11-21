@@ -9,17 +9,17 @@ from pathlib import Path
 import csv
 from os import mkdir
 
-# Load data
-project_dir = Path(__file__).resolve().parent
-train_path = project_dir.joinpath('train.tsv')
-dev_path = project_dir.joinpath('dev.tsv')
-
-train_data = csv.DictReader(open(train_path, 'r'), dialect='excel-tab')
-dev_data = csv.DictReader(open(dev_path, 'r'), dialect='excel-tab')
 
 project_dir = Path(__file__).resolve().parent.parent.parent.parent
 data_dir = Path(project_dir, 'data', 'probing', 'wnli')
 mkdir(data_dir)
+
+# Load data
+train_path = data_dir.joinpath('train.tsv')
+dev_path = data_dir.joinpath('dev.tsv')
+
+train_data = csv.DictReader(open(train_path, 'r'), dialect='excel-tab')
+dev_data = csv.DictReader(open(dev_path, 'r'), dialect='excel-tab')
 
 # Save files
 question_path = data_dir.joinpath('wnli.txt')
@@ -30,9 +30,8 @@ question_file = open(question_path, 'w')
 label_file = open(label_path, 'w')
 info_file = open(info_path, 'wb')
 
+
 # Process data
-
-
 def process_examples(data):
   example_count = 0
   for example in train_data:
