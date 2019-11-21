@@ -3,7 +3,8 @@
 import pickle
 import argparse
 from pathlib import Path
-
+import csv
+from itertools import chain
 from probing.utils import load_glove, encode_glove
 
 
@@ -58,6 +59,17 @@ if __name__ == "__main__":
 
         questions = [line[line.index(' ') + 1:].rstrip() for line in data]
         embeddings = encode_glove(questions, glove)
+    if task_name == 'wnli':
+        data_dir = Path(project_dir, 'data', 'probing', 'wnli')
+        train_path = data_dir.joinpath('train.tsv')
+        dev_path = data_dir.joinpath('dev.tsv')
+
+        train_data = csv.DictReader(open(train_path, 'r'), dialect='excel-tab')
+        dev_data = csv.DictReader(open(dev_path, 'r'), dialect='excel-tab')
+        data = chain(train_data, dev_data)
+
+        examples = [example['sentence1'] + example['sentence2'] for example in data]
+        embeddings = encode_glove(examples, glove)
     else:
         raise NotImplementedError(f'Probing task: {task_name} not supported')
 
