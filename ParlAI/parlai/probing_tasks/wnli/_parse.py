@@ -15,12 +15,9 @@ data_dir = Path(project_dir, 'data', 'probing', 'wnli')
 # Load raw data
 train_path = data_dir.joinpath('train.tsv')
 dev_path = data_dir.joinpath('dev.tsv')
-test_path = data_dir.joinpath('test.tsv')
 
 train_data = csv.DictReader(open(train_path, 'r'), dialect='excel-tab')
 dev_data = csv.DictReader(open(dev_path, 'r'), dialect='excel-tab')
-test_data = csv.DictReader(open(test_path, 'r'), dialect='excel-tab')
-all_data = train_data + dev_data + test_data
 
 # Save files
 question_path = data_dir.joinpath('wnli.txt')
@@ -45,11 +42,9 @@ def process_split(data):
 
 train_data_len = process_split(train_data)
 dev_data_len = process_split(dev_data)
-test_data_len = process_split(test_data)
 
 # Save data info
 info = {'n_train': train_data_len,
-        'n_dev': dev_data_len,
-        'n_test': test_data_len}
+        'n_dev': dev_data_len}
 
 pickle.dump(info, info_file)
