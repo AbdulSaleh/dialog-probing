@@ -71,7 +71,7 @@ if __name__ == "__main__":
         examples = [example['sentence1'] + ' ' + example['sentence2'] for example in data]
         embeddings = encode_glove(examples, glove)
 
-    elif task_name == 'mulinli':
+    elif task_name == 'multinli':
         MULTINLI_PREMISE_KEY = 'sentence1'
         MULTINLI_HYPO_KEY = 'sentence2'
 
@@ -123,7 +123,7 @@ if __name__ == "__main__":
     elif task_name == 'ushuffle_dailydialog':
         # This task is an exception as we load the shuffled and processed
         # probing data in ParlAI format instead of the raw data.
-        data_dir = Path(project_dir, 'data', 'probing', 'shuffle_dailydialog')
+        data_dir = Path(project_dir, 'data', 'probing', 'ushuffle_dailydialog')
         data = open(data_dir.joinpath('shuffle.txt'))
 
         dialogs = []
