@@ -1,53 +1,60 @@
-# Copyright (c) Facebook, Inc. and its affiliates.
-# This source code is licensed under the MIT license found in the
-# LICENSE file in the root directory of this source tree.
-
 """
-This preprocessing script was used to create ParlAI's version of the
-data. It was run in a script called parse.py inside ijcnlp_dailydialog/ after
-uncompressing the original directory and all subdirectories.
+Script to create shuffled utterance daily dialog dataset in ParlAI format.
+
+Note that this script should be manually run by the user and not through ParlAI
+to process the data, and hence _parse.py instead of parse.py.
 """
 
+import pickle
 import json
-from pathlib import Path
 import random
+from pathlib import Path
+random.seed(1984)
+
 
 project_dir = Path(__file__).resolve().parent.parent.parent.parent
 data_dir = Path(project_dir, 'data', 'probing', 'shuffle_dailydialog')
-train_path = data_dir.joinpath('train.json')
 test_path = data_dir.joinpath('test.json')
-valid_path = data_dir.joinpath('valid.json')
 
-train = list(map(json.loads, open(train_path, 'r').readlines()))
 test = list(map(json.loads, open(test_path, 'r').readlines()))
-valid = list(map(json.loads, open(valid_path, 'r').readlines()))
-data = train + test + valid
+data = test
 
 # Save files
-question_path = data_dir.joinpath('shuffle_dailydialog.txt')
+shuffle_path = data_dir.joinpath('shuffled.txt')
 label_path = data_dir.joinpath('labels.txt')
 info_path = data_dir.joinpath('info.pkl')
 
-question_file = open(question_path, 'w')
+shuffle_file = open(shuffle_path, 'w')
 label_file = open(label_path, 'w')
 info_file = open(info_path, 'wb')
 
+# Pick dialogs to shuffle
+n = len(data)
+indices = range(len(data))
+shuffle = random.sample(indices, n//2)
+
 # Process data
 for i, episode in enumerate(data):
-  dialogue = episode['dialogue']
-  # TODO consider making this exactly half of dataset
-  shuffle = i > (len(data) / 2)
-  if shuffle:
-    random.Random(0).shuffle(dialogue)
-    label_file.write('True' + '\n')
-  else:
-    label_file.write('False' + '\n')
-  for i in range(0, len(dialogue), 2):
-    utterance_1 = dialogue[i]['text']
-    if i == len(dialogue) - 1:
-      utterance_2 = ''
+    dialog = episode['dialogue']
+
+    # Might choose to limit dialog length
+    conv_len = random.sample(range(2, len(dialog)+1), 1)[0]
+    dialog = dialog[:conv_len]
+
+    if i in shuffle:
+        random.shuffle(dialog)
+        label_file.write('True' + '\n')
     else:
-      utterance_2 = dialogue[i + 1]['text']
-    episode_done = i >= len(dialogue) - 2
-    question_file.write(
-        f'text:{utterance_1}\tlabels:{utterance_2}\tepisode_done:{episode_done}\n')
+        label_file.write('False' + '\n')
+
+    text = '\n'.join([turn['text'] for turn in dialog])
+    shuffle_file.write(
+        f'text:{text}\tlabels: \tepisode_done:True\n'
+    )
+
+# Save data info
+n_train = int(len(data) * 0.85)
+info = {'n_train': n_train,
+        'n_test': len(data) - n_train}
+
+pickle.dump(info, info_file)
