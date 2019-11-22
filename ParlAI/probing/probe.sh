@@ -7,15 +7,15 @@
 # MF=
 # TASK=
 
-MODEL_DIRS=`ls ../trained/dailydialog`
-for dir in $MODE_DIRS
+dirs=`ls ../trained/dailydialog`
+for dir in $dirs
 do
 if [ $dir != 'old' ]
 then
     if [[ $dir == *'transformer'* ]]
     then
     echo "$dir"
-
+    fi
     if [[ $dir == *'seq2seq'* ]]
     then
     echo "$dir"
