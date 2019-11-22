@@ -1,6 +1,6 @@
-"""Generate bag of vectors representation for a given [robing task
-"""
+"""Generate bag of vectors representation for a given probing task."""
 import pickle
+import json
 import argparse
 from pathlib import Path
 import csv
@@ -59,7 +59,7 @@ if __name__ == "__main__":
 
         questions = [line[line.index(' ') + 1:].rstrip() for line in data]
         embeddings = encode_glove(questions, glove)
-    if task_name == 'wnli':
+    elif task_name == 'wnli':
         data_dir = Path(project_dir, 'data', 'probing', 'wnli')
         train_path = data_dir.joinpath('train.tsv')
         dev_path = data_dir.joinpath('dev.tsv')
@@ -68,15 +68,81 @@ if __name__ == "__main__":
         dev_data = csv.DictReader(open(dev_path, 'r'), dialect='excel-tab')
         data = chain(train_data, dev_data)
 
-        examples = [example['sentence1'] + example['sentence2'] for example in data]
+        examples = [example['sentence1'] + ' ' + example['sentence2'] for example in data]
         embeddings = encode_glove(examples, glove)
+
+    elif task_name == 'mulinli':
+        MULTINLI_PREMISE_KEY = 'sentence1'
+        MULTINLI_HYPO_KEY = 'sentence2'
+
+        data_dir = Path(project_dir, 'data', 'probing', 'multinli')
+        train_path = data_dir.joinpath('multinli_1.0_train.jsonl')
+        dev_path = data_dir.joinpath('multinli_1.0_dev_matched.jsonl')
+        test_path = data_dir.joinpath('multinli_1.0_dev_mismatched.jsonl')
+
+        train = [json.loads(l) for l in open(train_path)]
+        dev = [json.loads(l) for l in open(dev_path)]
+        test = [json.loads(l) for l in open(test_path)]
+        data = train + dev + test
+
+        examples = []
+        for line in data:
+            premise = line[MULTINLI_PREMISE_KEY]
+            hypo = line[MULTINLI_HYPO_KEY]
+            examples.append(premise + ' ' + hypo)
+        embeddings = encode_glove(examples, glove)
+
+    elif task_name == 'snips':
+        labels = ['AddToPlaylist', 'BookRestaurant', 'GetWeather', 'PlayMusic',
+                  'RateBook', 'SearchCreativeWork', 'SearchScreeningEvent']
+
+        data_dir = Path(project_dir, 'data', 'probing', 'snips')
+        question_path = data_dir.joinpath('snips.txt')
+        label_path = data_dir.joinpath('labels.txt')
+        info_path = data_dir.joinpath('info.pkl')
+
+        examples = []
+        # Process train
+        for label in labels:
+            f_name = data_dir.joinpath(label, 'train_' + label + '_full.json')
+            with open(f_name, encoding='latin-1') as f:
+                dataset = json.load(f)
+                for example in dataset[label]:
+                    text = ''.join([t['text'] for t in example['data']])
+                    examples.append(text)
+        # Process test
+        for label in labels:
+            f_name = data_dir.joinpath(label, 'validate_' + label + '.json')
+            with open(f_name, encoding='latin-1') as f:
+                dataset = json.load(f)
+                for example in dataset[label]:
+                    text = ''.join([t['text'] for t in example['data']])
+                    examples.append(text)
+        embeddings = encode_glove(examples, glove)
+
+    elif task_name == 'ushuffle_dailydialog':
+        # This task is an exception as we load the shuffled and processed
+        # probing data in ParlAI format instead of the raw data.
+        data_dir = Path(project_dir, 'data', 'probing', 'shuffle_dailydialog')
+        data = open(data_dir.joinpath('shuffle.txt'))
+
+        dialogs = []
+        dialog = ''
+        for turn in data:
+            turn = turn.split('\t')
+            text = turn[0][len('text:'):] + ' '
+            dialog += text
+
+            if len(turn) == 3:
+                # implies dialog is over
+                dialogs.append(dialog)
+                dialog = ''
+
+        examples = dialogs
+        embeddings = encode_glove(examples, glove)
+
     else:
         raise NotImplementedError(f'Probing task: {task_name} not supported')
 
     pickle.dump(embeddings, save_file)
     print(f'Done embedding {task_name} data with GloVe')
-
-
-
-
-
