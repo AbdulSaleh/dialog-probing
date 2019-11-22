@@ -17,7 +17,7 @@ def _path(opt):
     return os.path.join(
         opt['datapath'],
         'probing',
-        'shuffle_dailydialog',
+        'ushuffle_dailydialog',
         'shuffle.txt')
 
 

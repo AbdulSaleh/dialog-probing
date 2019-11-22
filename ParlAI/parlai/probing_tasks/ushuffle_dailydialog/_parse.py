@@ -13,7 +13,7 @@ random.seed(1984)
 
 
 project_dir = Path(__file__).resolve().parent.parent.parent.parent
-data_dir = Path(project_dir, 'data', 'probing', 'shuffle_dailydialog')
+data_dir = Path(project_dir, 'data', 'probing', 'ushuffle_dailydialog')
 test_path = data_dir.joinpath('test.json')
 
 test = list(map(json.loads, open(test_path, 'r').readlines()))
