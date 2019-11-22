@@ -71,7 +71,7 @@ if __name__ == "__main__":
         examples = [example['sentence1'] + ' ' + example['sentence2'] for example in data]
         embeddings = encode_glove(examples, glove)
 
-    elif task_name == 'mulinli':
+    elif task_name == 'multinli':
         MULTINLI_PREMISE_KEY = 'sentence1'
         MULTINLI_HYPO_KEY = 'sentence2'
 
