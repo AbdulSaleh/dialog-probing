@@ -1,11 +1,10 @@
 #!/bin/bash
 
-# TASK_NAME=$1
-# CUDA=$2
-# BATCH=$3
-#
-# MF=
-# TASK=
+TASK_NAME=$1
+CUDA=$2
+BATCH=$3
+
+task="parlai.probing_tasks.${TASK}.agents"
 
 dirs=`ls ../trained/dailydialog`
 for dir in $dirs
@@ -14,13 +13,23 @@ if [ $dir != 'old' ]
 then
     if [[ $dir == *'transformer'* ]]
     then
-    echo "$dir"
+    mf="trained/dailydialog/${dir}/transformer"
+    echo "$mf"
     fi
+    if [[ $dir == *'seq2seq_att'* ]]
+    then
+    mf="trained/dailydialog/${dir}/seq2seq_att"
+    echo "$mf"
+    fi
+
     if [[ $dir == *'seq2seq'* ]]
     then
-    echo "$dir"
+    mf="trained/dailydialog/${dir}/seq2seq"
+    echo "$mf"
     fi
+    #command="CUDA_VISIBLE_DEVICES=${CUDA} python examples/eval_model.py -t $task -mf $MF --batchsize $BATCH --probe True"
 fi
 done
 
-# CUDA_VISIBLE_DEVICES=$CUDA python examples/eval_model.py -t $TASK -mf $MF --batchsize $BATCH --probe True
+# CUDA_VISIBLE_DEVICES=$CUDA python examples/eval_model.py -t $task -mf $MF --batchsize $BATCH --probe True
+#CUDA_VISIBLE_DEVICES=2 python examples/eval_model.py  -mf trained/dailydialog/small_default_transformer/transformer -t parlai.probing_tasks.wnli.agents --batchsize 128 --probe True
