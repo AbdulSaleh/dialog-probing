@@ -4,7 +4,7 @@ TASK_NAME=$1
 CUDA=$2
 BATCH=$3
 
-task="parlai.probing_tasks.${TASK}.agents"
+task="parlai.probing_tasks.${TASK_NAME}.agents"
 
 dirs=`ls ../trained/dailydialog`
 for dir in $dirs
@@ -27,9 +27,6 @@ then
     echo "$mf"
     fi
     command="CUDA_VISIBLE_DEVICES=${CUDA} python examples/eval_model.py -t ${task} -mf ${mf} --batchsize ${BATCH} --probe True"
-    echo "$command"
+    command
 fi
 done
-
-# CUDA_VISIBLE_DEVICES=$CUDA python examples/eval_model.py -t $task -mf $MF --batchsize $BATCH --probe True
-#CUDA_VISIBLE_DEVICES=2 python examples/eval_model.py  -mf trained/dailydialog/small_default_transformer/transformer -t parlai.probing_tasks.wnli.agents --batchsize 128 --probe True
