@@ -14,19 +14,19 @@ then
     if [[ $dir == *'transformer'* ]]
     then
     mf="trained/dailydialog/${dir}/transformer"
-    echo "$mf"
+    # echo "$mf"
 
     elif [[ $dir == *'seq2seq_att'* ]]
     then
     mf="trained/dailydialog/${dir}/seq2seq_att"
-    echo "$mf"
+    # echo "$mf"
 
     elif [[ $dir == *'seq2seq'* ]]
     then
     mf="trained/dailydialog/${dir}/seq2seq"
-    echo "$mf"
+    # echo "$mf"
     fi
     command="CUDA_VISIBLE_DEVICES=${CUDA} python examples/eval_model.py -t ${task} -mf ${mf} --batchsize ${BATCH} --probe True"
-    command
+    eval "$command"
 fi
 done
