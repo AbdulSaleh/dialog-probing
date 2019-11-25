@@ -26,7 +26,8 @@ then
     mf="trained/dailydialog/${dir}/seq2seq"
     echo "$mf"
     fi
-    #command="CUDA_VISIBLE_DEVICES=${CUDA} python examples/eval_model.py -t $task -mf $MF --batchsize $BATCH --probe True"
+    command="CUDA_VISIBLE_DEVICES=${CUDA} python examples/eval_model.py -t ${task} -mf ${mf} --batchsize ${BATCH} --probe True"
+    echo "$command"
 fi
 done
 
