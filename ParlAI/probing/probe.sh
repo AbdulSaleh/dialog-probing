@@ -15,14 +15,13 @@ then
     then
     mf="trained/dailydialog/${dir}/transformer"
     echo "$mf"
-    fi
-    if [[ $dir == *'seq2seq_att'* ]]
+
+    elif [[ $dir == *'seq2seq_att'* ]]
     then
     mf="trained/dailydialog/${dir}/seq2seq_att"
     echo "$mf"
-    fi
 
-    if [[ $dir == *'seq2seq'* ]]
+    elif [[ $dir == *'seq2seq'* ]]
     then
     mf="trained/dailydialog/${dir}/seq2seq"
     echo "$mf"
