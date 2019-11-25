@@ -6,7 +6,7 @@ BATCH=$3
 
 task="parlai.probing_tasks.${TASK_NAME}.agents"
 
-dirs=`ls ../trained/dailydialog`
+dirs=`ls trained/dailydialog`
 for dir in $dirs
 do
 if [ $dir != 'old' ]
