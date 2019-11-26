@@ -29,10 +29,11 @@ n_test = 0
 # Process train data
 for label in labels:
     f_name = data_dir.joinpath(label, 'train_' + label + '_full.json')
-    with open(f_name, encoding='utf-8', errors='ignore') as f:
+    with open(f_name, encoding="utf-8", errors='ignore') as f:
         dataset = json.load(f)
         for example in dataset[label]:
             text = ''.join([t['text'] for t in example['data']])
+            text = text.replace('\n', '').replace('\t', '')
             question_file.write(('text:' + text + '\tlabels: \tepisode_done:True\n'))
             label_file.write(label + '\n')
             n_train += 1
@@ -40,10 +41,11 @@ for label in labels:
 # Process test data
 for label in labels:
     f_name = data_dir.joinpath(label, 'validate_' + label + '.json')
-    with open(f_name, encoding='utf-8', errors='ignore') as f:
+    with open(f_name, encoding="utf-8", errors='ignore') as f:
         dataset = json.load(f)
         for example in dataset[label]:
-            text = ''.join([t['text'] for t in example['data']])
+            text = (''.join([t['text'] for t in example['data']]))
+            text = text.replace('\n', '').replace('\t', '')
             question_file.write('text:' + text + '\tlabels: \tepisode_done:True\n')
             label_file.write(label + '\n')
             n_test += 1
