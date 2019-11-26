@@ -2,7 +2,7 @@
 
 TASK_NAME=$1
 CUDA=$2
-BATCH=$3
+EPOCHS=$3
 
 task="parlai.probing_tasks.${TASK_NAME}.agents"
 
@@ -13,20 +13,20 @@ if [ $dir != 'old' ]
 then
     if [[ $dir == *'transformer'* ]]
     then
-    mf="trained/dailydialog/${dir}/transformer"
+    m="dailydialog/${dir}"
     # echo "$mf"
 
     elif [[ $dir == *'seq2seq_att'* ]]
     then
-    mf="trained/dailydialog/${dir}/seq2seq_att"
+    m="dailydialog/${dir}"
     # echo "$mf"
 
     elif [[ $dir == *'seq2seq'* ]]
     then
-    mf="trained/dailydialog/${dir}/seq2seq"
+    m="dailydialog/${dir}"
     # echo "$mf"
     fi
-    command="CUDA_VISIBLE_DEVICES=${CUDA} python examples/eval_model.py -t ${task} -mf ${mf} --batchsize ${BATCH} --probe True"
+    command="CUDA_VISIBLE_DEVICES=${CUDA} python probing/probe.py -t ${TASK_NAME} -m ${m} -ep ${EPOCHS}"
     eval "$command"
 fi
 done
