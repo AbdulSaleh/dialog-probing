@@ -18,7 +18,7 @@ def _path(opt):
         opt['datapath'],
         'probing',
         'ushuffle_dailydialog',
-        'shuffle.txt')
+        'shuffled.txt')
 
 
 class DefaultTeacher(ParlAIDialogTeacher):

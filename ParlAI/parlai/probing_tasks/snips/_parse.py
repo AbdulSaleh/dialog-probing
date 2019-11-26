@@ -19,7 +19,7 @@ question_path = data_dir.joinpath('snips.txt')
 label_path = data_dir.joinpath('labels.txt')
 info_path = data_dir.joinpath('info.pkl')
 
-question_file = open(question_path, 'w', encoding='utf8')
+question_file = open(question_path, 'w', encoding='utf-8')
 label_file = open(label_path, 'w')
 info_file = open(info_path, 'wb')
 
@@ -29,7 +29,7 @@ n_test = 0
 # Process train data
 for label in labels:
     f_name = data_dir.joinpath(label, 'train_' + label + '_full.json')
-    with open(f_name, encoding='latin-1') as f:
+    with open(f_name, encoding='utf-8', errors='ignore') as f:
         dataset = json.load(f)
         for example in dataset[label]:
             text = ''.join([t['text'] for t in example['data']])
@@ -40,7 +40,7 @@ for label in labels:
 # Process test data
 for label in labels:
     f_name = data_dir.joinpath(label, 'validate_' + label + '.json')
-    with open(f_name, encoding='latin-1') as f:
+    with open(f_name, encoding='utf-8', errors='ignore') as f:
         dataset = json.load(f)
         for example in dataset[label]:
             text = ''.join([t['text'] for t in example['data']])
