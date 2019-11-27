@@ -45,6 +45,6 @@ dev_data_len = process_split(dev_data)
 
 # Save data info
 info = {'n_train': train_data_len,
-        'n_dev': dev_data_len}
+        'n_test': dev_data_len}
 
 pickle.dump(info, info_file)

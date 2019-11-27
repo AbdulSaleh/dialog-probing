@@ -7,7 +7,7 @@ from pathlib import Path
 
 import numpy as np
 import torch.optim as optim
-from skorch import NeuralNetClassifier
+from skorch import NeuralNetClassifier, NeuralNetBinaryClassifier
 from skorch.callbacks import Checkpoint
 from skorch.helper import predefined_split
 from skorch.dataset import Dataset
@@ -52,7 +52,8 @@ if __name__ == '__main__':
     print(f'Loading labels from {labels_path}')
     labels = open(labels_path).readlines()
     y = np.unique(labels, return_inverse=True)[1]
-    y = y.astype(np.int64)
+    y = y.astype(np.float32) if len(set(y)) == 2 else y.astype(np.int64)
+
 
     # Load info
     info_path = project_dir.joinpath('data', 'probing', task_name, 'info.pkl')
@@ -67,24 +68,27 @@ if __name__ == '__main__':
         # Use pre defined dev split
         n_dev = info['n_dev']
         X_val = X[n_train: n_train+n_dev]
-        y_val = X[n_train: n_train+n_dev]
+        y_val = y[n_train: n_train+n_dev]
         X_test = X[n_train+n_dev:]
-        y_test = X[n_train+n_dev:]
+        y_test = y[n_train+n_dev:]
     else:
         # Create custom stratified dev split from train
         X_test = X[n_train:]
         y_test = y[n_train:]
         X_train, X_val, y_train, y_val = train_test_split(
-            X_train, y_train, test_size=0.1, stratify=y_train, random_state=1984
+            X_train, y_train, test_size=0.1, stratify=y_train.astype(np.int64),
+            random_state=1984
         )
 
     # Number of features, and number of classes
+    # Only one output neuron in binary case
     input_dim = len(X[0])
-    output_dim = len(set(y))
+    output_dim = 1 if len(set(y)) == 2 else len(set(y))
+    Net = NeuralNetBinaryClassifier if len(set(y)) == 2 else NeuralNetClassifier
 
     # Init skorch classifier
     print('Initializing MLP!')
-    net = NeuralNetClassifier(
+    net = Net(
         # Architecture
         module=MLP,
         module__input_dim=input_dim,

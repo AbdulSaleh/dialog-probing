@@ -1,5 +1,5 @@
 """
-Script to process TREC Question Classification dataset into ParlAI format.
+Script to process Snips dataset into ParlAI format.
 
 Note that this script should be manually run by the user and not through ParlAI
 to process the data, and hence _parse.py instead of parse.py.
@@ -19,31 +19,39 @@ question_path = data_dir.joinpath('snips.txt')
 label_path = data_dir.joinpath('labels.txt')
 info_path = data_dir.joinpath('info.pkl')
 
-question_file = open(question_path, 'w')
+question_file = open(question_path, 'w', encoding='utf-8')
 label_file = open(label_path, 'w')
 info_file = open(info_path, 'wb')
 
-counts = [0, 0]
+n_train = 0
+n_test = 0
 
-for i, label in enumerate(labels):
+# Process train data
+for label in labels:
+    f_name = data_dir.joinpath(label, 'train_' + label + '_full.json')
+    with open(f_name, encoding="utf-8", errors='ignore') as f:
+        dataset = json.load(f)
+        for example in dataset[label]:
+            text = ''.join([t['text'] for t in example['data']])
+            text = text.replace('\n', '').replace('\t', '')
+            question_file.write(('text:' + text + '\tlabels: \tepisode_done:True\n'))
+            label_file.write(label + '\n')
+            n_train += 1
 
-    for j, filename in enumerate(['/train_' + label + '_full.json', '/validate_' + label + '.json']):
-        with open(str(data_dir.joinpath(label + filename)), encoding='latin-1') as json_file:
-            dataset = json.load(json_file)
-            for example in dataset[label]:
-                example_text = ''
-                for phrase in example['data']:
-                    example_text += phrase['text']
-                question_file.write('text:' + example_text + '\tlabels: \tepisode_done:True\n')
-                label_file.write(label + '\n')
-                counts[j] += 1
-
-print('n_train:', counts[0])
-print('n_test', counts[1])
+# Process test data
+for label in labels:
+    f_name = data_dir.joinpath(label, 'validate_' + label + '.json')
+    with open(f_name, encoding="utf-8", errors='ignore') as f:
+        dataset = json.load(f)
+        for example in dataset[label]:
+            text = (''.join([t['text'] for t in example['data']]))
+            text = text.replace('\n', '').replace('\t', '')
+            question_file.write('text:' + text + '\tlabels: \tepisode_done:True\n')
+            label_file.write(label + '\n')
+            n_test += 1
 
 # Save data info
-info = {'n_train': counts[0],
-        'n_test': counts[1]}
+info = {'n_train': n_train,
+        'n_test': n_test}
 
 pickle.dump(info, info_file)
-
