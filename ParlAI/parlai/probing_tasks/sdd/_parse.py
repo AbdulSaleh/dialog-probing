@@ -31,6 +31,10 @@ example_count = 0
 turn_count = 0
 set_example_counts = [0, 0]
 
+one_count = 1
+two_count = 2
+three_count = 0
+
 for i, dset_type in enumerate(['train', 'dev', 'test']):
     with open(str(data_dir.joinpath('kvret_' + dset_type + '_public.json'))) as json_file:
         dataset = json.load(json_file)
@@ -55,6 +59,12 @@ for i, dset_type in enumerate(['train', 'dev', 'test']):
                         requested_here.append(label_type)
                         if requested_here[-1] == 'date':  # merge date and time to reduce conflicts
                             requested_here[-1] = 'time'
+                        elif requested_here[-1] in ['poi_type', 'address']:  # merge poi and poit type to reduce conflicts
+                            requested_here[-1] = 'poi'
+                        elif requested_here[-1] == 'distance':  # merge poi and poit type to reduce conflicts
+                            requested_here[-1] = 'traffic'
+                        elif requested_here[-1] in ['party', 'room', 'agenda']:
+                            requested_here[-1] = 'event'
                 if len(requested_here) == 0:
                     label_turns.append('none')
                 else:
