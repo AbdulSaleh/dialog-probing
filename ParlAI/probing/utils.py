@@ -34,12 +34,16 @@ def load_glove(path):
     return embs
 
 
-def encode_sent(s, glove):
+def encode_sent(s, glove, dict):
     s = contractions.fix(s)
     words = re_tokenize(s)
 
     emb = np.zeros(glove['hi'].shape)
     for w in words:
+        if dict is not None and w not in dict:
+            # word not in provided dictionary
+            continue
+
         try:
             emb += glove[w]
         except KeyError:
@@ -49,10 +53,10 @@ def encode_sent(s, glove):
     return emb / len(words)
 
 
-def encode_glove(sents, glove):
+def encode_glove(sents, glove, dict=None):
     emb_size = len(glove['hi'])
     embs = np.zeros((len(sents), emb_size))
     for i, s in enumerate(sents):
-        embs[i] = encode_sent(s, glove)
+        embs[i] = encode_sent(s, glove, dict)
 
     return embs

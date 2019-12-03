@@ -46,6 +46,18 @@ if __name__ == "__main__":
     save_path = task_dir.joinpath(task_name + '.pkl')
     save_file = open(save_path, 'wb')
 
+    # Check for dict
+    dict_exsists = list(save_dir.glob('*.dict'))
+    if dict_exsists:
+        dict_path = list(save_dir.glob('*.dict'))[0]
+        lines = open(dict_path).readlines()
+        dict = set(line.split('\t')[0] for line in lines)
+    else:
+        dict = None
+        print('#' * 10, '\n', '#' * 10)
+        print('No dict found!! Using entire GloVe vocab.')
+        print('#' * 10, '\n', '#' * 10)
+
     # Load and process data depending on task
     print(f'Loading {task_name} data!')
     if task_name == 'trecquestion':
@@ -58,7 +70,7 @@ if __name__ == "__main__":
         data = train + test
 
         questions = [line[line.index(' ') + 1:].rstrip() for line in data]
-        embeddings = encode_glove(questions, glove)
+        embeddings = encode_glove(questions, glove, dict=dict)
     elif task_name == 'wnli':
         data_dir = Path(project_dir, 'data', 'probing', 'wnli')
         train_path = data_dir.joinpath('train.tsv')
@@ -69,7 +81,7 @@ if __name__ == "__main__":
         data = chain(train_data, dev_data)
 
         examples = [example['sentence1'] + ' ' + example['sentence2'] for example in data]
-        embeddings = encode_glove(examples, glove)
+        embeddings = encode_glove(examples, glove, dict=dict)
 
     elif task_name == 'multinli':
         MULTINLI_PREMISE_KEY = 'sentence1'
@@ -90,7 +102,7 @@ if __name__ == "__main__":
             premise = line[MULTINLI_PREMISE_KEY]
             hypo = line[MULTINLI_HYPO_KEY]
             examples.append(premise + ' ' + hypo)
-        embeddings = encode_glove(examples, glove)
+        embeddings = encode_glove(examples, glove, dict=dict)
 
     elif task_name == 'snips':
         labels = ['AddToPlaylist', 'BookRestaurant', 'GetWeather', 'PlayMusic',
@@ -118,7 +130,7 @@ if __name__ == "__main__":
                 for example in dataset[label]:
                     text = ''.join([t['text'] for t in example['data']])
                     examples.append(text)
-        embeddings = encode_glove(examples, glove)
+        embeddings = encode_glove(examples, glove, dict=dict)
 
     elif task_name == 'ushuffle_dailydialog':
         # This task is an exception as we load the shuffled and processed
@@ -139,7 +151,7 @@ if __name__ == "__main__":
                 dialog = ''
 
         examples = dialogs
-        embeddings = encode_glove(examples, glove)
+        embeddings = encode_glove(examples, glove, dict=dict)
 
     else:
         raise NotImplementedError(f'Probing task: {task_name} not supported')
