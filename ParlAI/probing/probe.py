@@ -58,7 +58,6 @@ if __name__ == '__main__':
     y = np.unique(labels, return_inverse=True)[1]
     y = y.astype(np.float32) if len(set(y)) == 2 else y.astype(np.int64)
 
-
     # Load info
     info_path = project_dir.joinpath('data', 'probing', task_name, 'info.pkl')
     info = pickle.load(open(info_path, 'rb'))
@@ -108,7 +107,7 @@ if __name__ == '__main__':
         train_split=predefined_split(Dataset(X_val, y_val)),
         # Optimizer
         optimizer=optim.Adam,
-        lr=opt['lr'],
+        lr=opt['learning_rate'],
         # Data
         iterator_train__shuffle=True,
     )
@@ -124,7 +123,6 @@ if __name__ == '__main__':
 
     preds = net.predict(X_test)
     test_acc = accuracy_score(y_test, preds)
-
 
     # Save results
     results = {'test_acc': test_acc,
