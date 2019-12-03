@@ -136,7 +136,7 @@ if __name__ == "__main__":
         # This task is an exception as we load the shuffled and processed
         # probing data in ParlAI format instead of the raw data.
         data_dir = Path(project_dir, 'data', 'probing', 'ushuffle_dailydialog')
-        data = open(data_dir.joinpath('shuffle.txt'))
+        data = open(data_dir.joinpath('shuffled.txt'))
 
         dialogs = []
         dialog = ''
