@@ -1248,7 +1248,43 @@ class ParlAIDialogTeacher(FixedDialogTeacher):
         self.episodes = []
         self.num_exs = 0
         eps = []
-        with open(path, encoding='utf-8') as read:
+        try:
+            read = open(path)
+        except UnicodeDecodeError:
+            read = open(path, encoding='utf-8')
+
+        # for line in read:
+        #     msg = str_to_msg(line.rstrip('\n'))
+        #     if msg:
+        #         self.num_exs += 1
+        #         eps.append(msg)
+        #         if msg.get('episode_done', False):
+        #             self.episodes.append(eps)
+        #             eps = []
+        # if len(eps) > 0:
+        #     # add last episode
+        #     eps[-1].force_set('episode_done', True)
+        #     self.episodes.append(eps)
+
+        if self.opt['probe']:
+            # When probing, read all history as one observation
+            for line in read:
+                line = line.rstrip('\n')
+                turn = line.split('\t')[0]  # In case there are other fields
+                if turn.startswith('text:'):
+                    # Start new episode
+                    # episode_done: True since probing sees all episode at once
+                    eps = [{'text': turn[len('text:'):],
+                            'labels': [' '],
+                            'episode_done':True}]
+                else:
+                    # Continue previous episode
+                    eps[0]['text'] = eps[0]['text'] + '\n' + turn
+
+                if 'episode_done:True' in line:
+                    self.episodes.append(eps)
+
+        else:
             for line in read:
                 msg = str_to_msg(line.rstrip('\n'))
                 if msg:
@@ -1257,10 +1293,10 @@ class ParlAIDialogTeacher(FixedDialogTeacher):
                     if msg.get('episode_done', False):
                         self.episodes.append(eps)
                         eps = []
-        if len(eps) > 0:
-            # add last episode
-            eps[-1].force_set('episode_done', True)
-            self.episodes.append(eps)
+            if len(eps) > 0:
+                # add last episode
+                eps[-1].force_set('episode_done', True)
+                self.episodes.append(eps)
 
 
 class AbstractImageTeacher(FixedDialogTeacher):
