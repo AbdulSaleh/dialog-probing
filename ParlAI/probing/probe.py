@@ -29,6 +29,10 @@ def setup_args():
                              'Assumes models saved to ParlAI\\trained')
 
     parser.add_argument('-ep', '--max_epochs', type=int, default=100)
+    parser.add_argument('-bs', '--batch_size', type=int, default=128)
+
+    parser.add_argument('-hidden', '--hidden_layer_dim', type=int, default=128)
+    parser.add_argument('-lr', '--learning_rate', type=float, default=0.001)
 
     return vars(parser.parse_args())
 
@@ -93,18 +97,18 @@ if __name__ == '__main__':
         module=MLP,
         module__input_dim=input_dim,
         module__output_dim=output_dim,
-        module__hidden_dim=128,
+        module__hidden_dim=opt['hidden_layer_dim'],
         module__dropout=0.5,
         device='cuda',
         # Training
         max_epochs=opt['max_epochs'],
-        batch_size=128,
+        batch_size=opt['batch_size'],
         #callbacks=[Checkpoint(monitor='valid_acc_best')],
         # train_split is validation data
         train_split=predefined_split(Dataset(X_val, y_val)),
         # Optimizer
         optimizer=optim.Adam,
-        lr=0.001,
+        lr=opt['lr'],
         # Data
         iterator_train__shuffle=True,
     )
