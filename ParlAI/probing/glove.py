@@ -133,26 +133,30 @@ if __name__ == "__main__":
         embeddings = encode_glove(examples, glove, dict=dict)
 
     elif task_name == 'ushuffle_dailydialog':
+        # raise NotImplemented('Bug needs to be fixed')
         # This task is an exception as we load the shuffled and processed
         # probing data in ParlAI format instead of the raw data.
         data_dir = Path(project_dir, 'data', 'probing', 'ushuffle_dailydialog')
         data = open(data_dir.joinpath('shuffled.txt'))
 
         dialogs = []
-        dialog = ''
-        for turn in data:
-            turn = turn.split('\t')
-            text = turn[0][len('text:'):] + ' '
-            dialog += text
+        for line in data:
+            line = line.rstrip('\n')
+            turn = line.split('\t')[0]
+            if turn.startswith('text:'):
+                # start a new episode
+                episode = []
+                turn = turn[len('text:'):]
+            episode.append(turn)
 
-            if len(turn) == 3:
-                # implies dialog is over
-                dialogs.append(dialog)
-                dialog = ''
+            if 'episode_done:True' in line:
+                dialogs.append(episode)
 
         examples = dialogs
         embeddings = encode_glove(examples, glove, dict=dict)
 
+    elif task_name == 'act_dailydialog':
+        raise NotImplementedError
     else:
         raise NotImplementedError(f'Probing task: {task_name} not supported')
 
