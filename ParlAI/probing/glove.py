@@ -150,13 +150,53 @@ if __name__ == "__main__":
             episode.append(turn)
 
             if 'episode_done:True' in line:
-                dialogs.append(episode)
+                dialogs.append(' '.join(episode))
 
-        examples = dialogs
-        embeddings = encode_glove(examples, glove, dict=dict)
+        embeddings = encode_glove(dialogs, glove, dict=dict)
 
     elif task_name == 'act_dailydialog':
-        raise NotImplementedError
+        data_dir = Path(project_dir, 'data', 'probing', 'act_dailydialog')
+        data = open(data_dir.joinpath('test.json'))
+
+        dialogs = []
+        for episode in data:
+            dialog = episode['dialogue']
+
+            running = []
+            for turn in dialog:
+                running.append(turn['text'])
+                text = ' '.join(running)
+                dialogs.append(text)
+
+        embeddings = encode_glove(dialogs, glove, dict=dict)
+
+    elif task_name == 'sentiment_dailydialog':
+        data_dir = Path(project_dir, 'data', 'probing', 'sentiment_dailydialog')
+        data = open(data_dir.joinpath('test.json'))
+
+        dialogs = []
+        for episode in data:
+            dialog = episode['dialogue']
+
+            running = []
+            for turn in dialog:
+                running.append(turn['text'])
+                text = ' '.join(running)
+                dialogs.append(text)
+
+        embeddings = encode_glove(dialogs, glove, dict=dict)
+
+    elif task_name == 'topic_dailydialog':
+        data_dir = Path(project_dir, 'data', 'probing', 'topic_dailydialog')
+        data = open(data_dir.joinpath('test.json'))
+
+        dialogs = []
+        for episode in data:
+            dialog = ' '.join([turn['text'] for turn in episode['dialogue']])
+            dialogs.append(dialog)
+
+        embeddings = encode_glove(dialogs, glove, dict=dict)
+
     else:
         raise NotImplementedError(f'Probing task: {task_name} not supported')
 
