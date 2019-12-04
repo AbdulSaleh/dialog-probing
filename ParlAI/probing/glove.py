@@ -156,7 +156,8 @@ if __name__ == "__main__":
 
     elif task_name == 'act_dailydialog':
         data_dir = Path(project_dir, 'data', 'probing', 'act_dailydialog')
-        data = open(data_dir.joinpath('test.json'))
+        test_path = data_dir.joinpath('test.json')
+        data = list(map(json.loads, open(test_path, 'r').readlines()))
 
         dialogs = []
         for episode in data:
@@ -172,7 +173,8 @@ if __name__ == "__main__":
 
     elif task_name == 'sentiment_dailydialog':
         data_dir = Path(project_dir, 'data', 'probing', 'sentiment_dailydialog')
-        data = open(data_dir.joinpath('test.json'))
+        test_path = data_dir.joinpath('test.json')
+        data = list(map(json.loads, open(test_path, 'r').readlines()))
 
         dialogs = []
         for episode in data:
@@ -188,7 +190,8 @@ if __name__ == "__main__":
 
     elif task_name == 'topic_dailydialog':
         data_dir = Path(project_dir, 'data', 'probing', 'topic_dailydialog')
-        data = open(data_dir.joinpath('test.json'))
+        test_path = data_dir.joinpath('test.json')
+        data = list(map(json.loads, open(test_path, 'r').readlines()))
 
         dialogs = []
         for episode in data:
