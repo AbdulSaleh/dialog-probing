@@ -11,31 +11,17 @@ from probing.utils import load_glove, encode_glove
 def setup_args():
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('-t', '--task', type=str, required=True,
-                        help='Usage: -t trecquestion\nOnly compatible with names in probing_tasks')
+    parser.add_argument('-t', '--tasks', type=str, nargs='+',
+                        required=True,
+                        help='Usage: -t trecquestion or -t trecquestion wnli multinli'
+                        '\nOnly compatible with names in probing_tasks')
 
     return vars(parser.parse_args())
 
 
-if __name__ == "__main__":
-    opt = setup_args()
-
-    project_dir = Path(__file__).resolve().parent.parent
-
-    # Load GloVe
-    glove_path = project_dir.joinpath('data', 'models', 'glove_vectors', 'glove.840B.300d.txt')
-    glove = load_glove(glove_path)
-
-    # Create save dir for embeddings
-    save_dir = project_dir.joinpath('trained', 'GloVe', 'probing')
-    if not save_dir.exists():
-        print('*' * 10, '\n', '*' * 10)
-        print(f'Creating dir to save GloVe bag of vectors embeddings at {save_dir}')
-        print('*' * 10, '\n', '*' * 10)
-        save_dir.mkdir(parents=True)
-
-    task_name = opt['task']
+def process_task(task_name, save_dir, glove):
     task_dir = save_dir.joinpath(task_name)
+
     if not task_dir.exists():
         print('*' * 10, '\n', '*' * 10)
         print(f'Creating dir to save {task_name} probing outputs at {task_dir}')
@@ -45,18 +31,6 @@ if __name__ == "__main__":
     # Create save file
     save_path = task_dir.joinpath(task_name + '.pkl')
     save_file = open(save_path, 'wb')
-
-    # Check for dict
-    dict_exsists = list(save_dir.glob('*.dict'))
-    if dict_exsists:
-        dict_path = list(save_dir.glob('*.dict'))[0]
-        lines = open(dict_path).readlines()
-        dict = set(line.split('\t')[0] for line in lines)
-    else:
-        dict = None
-        print('#' * 10, '\n', '#' * 10)
-        print('No dict found!! Using entire GloVe vocab.')
-        print('#' * 10, '\n', '#' * 10)
 
     # Load and process data depending on task
     print(f'Loading {task_name} data!')
@@ -71,6 +45,7 @@ if __name__ == "__main__":
 
         questions = [line[line.index(' ') + 1:].rstrip() for line in data]
         embeddings = encode_glove(questions, glove, dict=dict)
+
     elif task_name == 'wnli':
         data_dir = Path(project_dir, 'data', 'probing', 'wnli')
         train_path = data_dir.joinpath('train.tsv')
@@ -109,10 +84,6 @@ if __name__ == "__main__":
                   'RateBook', 'SearchCreativeWork', 'SearchScreeningEvent']
 
         data_dir = Path(project_dir, 'data', 'probing', 'snips')
-        question_path = data_dir.joinpath('snips.txt')
-        label_path = data_dir.joinpath('labels.txt')
-        info_path = data_dir.joinpath('info.pkl')
-
         examples = []
         # Process train
         for label in labels:
@@ -205,3 +176,37 @@ if __name__ == "__main__":
 
     pickle.dump(embeddings, save_file)
     print(f'Done embedding {task_name} data with GloVe')
+
+
+if __name__ == "__main__":
+    opt = setup_args()
+
+    project_dir = Path(__file__).resolve().parent.parent
+
+    # Load GloVe
+    glove_path = project_dir.joinpath('data', 'models', 'glove_vectors', 'glove.840B.300d.txt')
+    glove = load_glove(glove_path)
+
+    # Create save dir for embeddings
+    save_dir = project_dir.joinpath('trained', 'GloVe', 'probing')
+    if not save_dir.exists():
+        print('*' * 10, '\n', '*' * 10)
+        print(f'Creating dir to save GloVe bag of vectors embeddings at {save_dir}')
+        print('*' * 10, '\n', '*' * 10)
+        save_dir.mkdir(parents=True)
+
+    # Check for dict
+    dict_exsists = list(save_dir.glob('*.dict'))
+    if dict_exsists:
+        dict_path = list(save_dir.glob('*.dict'))[0]
+        lines = open(dict_path).readlines()
+        dict = set(line.split('\t')[0] for line in lines)
+    else:
+        dict = None
+        print('#' * 10, '\n', '#' * 10)
+        print('No dict found!! Using entire GloVe vocab.')
+        print('#' * 10, '\n', '#' * 10)
+
+    task_names = opt['tasks']
+    for task_name in task_names:
+        process_task(task_name, save_dir, glove)
