@@ -127,47 +127,58 @@ def process_task(task_name, save_dir, glove):
 
     elif task_name == 'act_dailydialog':
         data_dir = Path(project_dir, 'data', 'probing', 'act_dailydialog')
-        test_path = data_dir.joinpath('test.json')
-        data = list(map(json.loads, open(test_path, 'r').readlines()))
+        data = open(data_dir.joinpath('dialogs.txt'))
 
         dialogs = []
-        for episode in data:
-            dialog = episode['dialogue']
+        for line in data:
+            line = line.rstrip('\n')
+            turn = line.split('\t')[0]
+            if turn.startswith('text:'):
+                # start a new episode
+                episode = []
+                turn = turn[len('text:'):]
+            episode.append(turn)
 
-            running = []
-            for turn in dialog:
-                running.append(turn['text'])
-                text = ' '.join(running)
-                dialogs.append(text)
+            if 'episode_done:True' in line:
+                dialogs.append(' '.join(episode))
 
         embeddings = encode_glove(dialogs, glove, dict=dict)
 
     elif task_name == 'sentiment_dailydialog':
         data_dir = Path(project_dir, 'data', 'probing', 'sentiment_dailydialog')
-        test_path = data_dir.joinpath('test.json')
-        data = list(map(json.loads, open(test_path, 'r').readlines()))
+        data = open(data_dir.joinpath('dialogs.txt'))
 
         dialogs = []
-        for episode in data:
-            dialog = episode['dialogue']
+        for line in data:
+            line = line.rstrip('\n')
+            turn = line.split('\t')[0]
+            if turn.startswith('text:'):
+                # start a new episode
+                episode = []
+                turn = turn[len('text:'):]
+            episode.append(turn)
 
-            running = []
-            for turn in dialog:
-                running.append(turn['text'])
-                text = ' '.join(running)
-                dialogs.append(text)
+            if 'episode_done:True' in line:
+                dialogs.append(' '.join(episode))
 
         embeddings = encode_glove(dialogs, glove, dict=dict)
 
     elif task_name == 'topic_dailydialog':
         data_dir = Path(project_dir, 'data', 'probing', 'topic_dailydialog')
-        test_path = data_dir.joinpath('test.json')
-        data = list(map(json.loads, open(test_path, 'r').readlines()))
+        data = open(data_dir.joinpath('dialogs.txt'))
 
         dialogs = []
-        for episode in data:
-            dialog = ' '.join([turn['text'] for turn in episode['dialogue']])
-            dialogs.append(dialog)
+        for line in data:
+            line = line.rstrip('\n')
+            turn = line.split('\t')[0]
+            if turn.startswith('text:'):
+                # start a new episode
+                episode = []
+                turn = turn[len('text:'):]
+            episode.append(turn)
+
+            if 'episode_done:True' in line:
+                dialogs.append(' '.join(episode))
 
         embeddings = encode_glove(dialogs, glove, dict=dict)
 
