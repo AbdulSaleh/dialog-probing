@@ -11,6 +11,8 @@ import random
 from pathlib import Path
 random.seed(1984)
 
+from sklearn.model_selection import train_test_split
+
 
 project_dir = Path(__file__).resolve().parent.parent.parent.parent
 data_dir = Path(project_dir, 'data', 'probing', 'topic_dailydialog')
@@ -28,6 +30,12 @@ dialogs_file = open(dialogs_path, 'w')
 label_file = open(label_path, 'w')
 info_file = open(info_path, 'wb')
 
+labels = [ep['topic'] for ep in data]
+X_train, X_test, y_train, y_test = train_test_split(
+    data, labels, test_size=0.15, random_state=1984, stratify=labels
+)
+
+data = X_train + X_test
 
 # Process data
 for episode in data:

@@ -201,6 +201,9 @@ if __name__ == "__main__":
         dict_path = list(save_dir.glob('*.dict'))[0]
         lines = open(dict_path).readlines()
         dict = set(line.split('\t')[0] for line in lines)
+        print('#' * 10, '\n', '#' * 10)
+        print(f'Found dict at {dict_path}')
+        print('#' * 10, '\n', '#' * 10)
     else:
         dict = None
         print('#' * 10, '\n', '#' * 10)
