@@ -1,10 +1,10 @@
-# Dialog Model 
-Implementation for the probing experiments in "Probing Neural Dialog Systems for Conversational Understanding," a final project for CS281 at Harvard
+# Probing Neural Dialog Systems for Conversational Understanding
+Implementation for the probing experiments in "Probing Neural Dialog Systems for Conversational Understanding," a final project for CS281 at Harvard.
 
-This code is inspired by and built off of the ParlAI project
+This code is inspired by and built off of the ParlAI project: https://parl.ai/.
 
 ## Prerequisites
-This section includes installation of required libraries, and downloading pre-trained models.
+This section includes installation of required libraries.
 
 ### Installation
 Install Python packages
@@ -37,7 +37,7 @@ CUDA_VISIBLE_DEVICES=0 python examples/train_model.py  -t dailydialog -m seq2seq
 
 ## Probing experiments
 
-For all of the following commands, replace <TASK> with whatever task name you want to probe for. The list of tasks names is below.
+For all of the following commands, replace \<TASK\> with whatever task name you want to probe for. The task names are listed below.
 
 * trecquestion
 * act_dailydialog
@@ -53,7 +53,9 @@ For all of the following commands, replace <TASK> with whatever task name you wa
 
 ### Generate GloVe embeddings for probing
 ```python probing/glove.py -t <TASK>```
-or 
+
+or, for generating embeddings for multiple tasks at once:
+
 ```python probing/glove.py -t trecquestion wnli multinli```
 
 ### Generate embeddings probed from models
@@ -63,15 +65,18 @@ CUDA_VISIBLE_DEVICES=0 python examples/eval_model.py  -mf trained/twitter/small_
 This probes all the models in trained/dailydialog/:
 ```bash probing/eval.sh <TASK> CUDA_DEVICE BATCHSIZE```
 
-example usage: bash probing/eval.sh wnli 1 128
+example usage: `bash probing/eval.sh wnli 1 128`
 
 ### Evaluate probing tasks
 
 ```python probing/probe.py -t <TASK> -m twitter/small_default_transformer -ep 200```
-or
-```python probing/probe.py -t trecquestion -m GloVe -ep 200```
 
-This evaluates all the embeddings in trained/dailydialog except for trained/dailydialog/old
+or, for evaluating using the GloVe embeddings
+
+```python probing/probe.py -t <TASK> -m GloVe -ep 200```
+
+This evaluates all the embeddings in trained/dailydialog:
+
 ```bash probing/probe.sh TASK CUDA_DEVICE EPOCHS```
 
 example usage: `bash probing/probe.sh wnli 1 150`
