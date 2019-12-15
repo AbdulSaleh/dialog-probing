@@ -182,6 +182,9 @@ def process_task(task_name, save_dir, glove):
 
         embeddings = encode_glove(dialogs, glove, dict=dict)
 
+    elif task_name == 'multi_woz':
+        raise NotImplementedError
+
     else:
         raise NotImplementedError(f'Probing task: {task_name} not supported')
 
