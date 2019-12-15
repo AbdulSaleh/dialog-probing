@@ -7,6 +7,7 @@ import pickle
 import json
 
 labels = ['taxi', 'police', 'restaurant', 'hospital', 'hotel', 'attraction', 'train']
+labels_dict = {'taxi': 0, 'police': 0, 'restaurant': 0, 'hospital': 0, 'hotel': 0, 'attraction': 0, 'train': 0}
 
 project_dir = Path(__file__).resolve().parent.parent.parent.parent
 data_dir = Path(project_dir, 'data', 'probing', 'multi_woz')
@@ -38,29 +39,14 @@ with open(str(data_dir.joinpath('multi_woz_data.json')), encoding='latin-1') as 
             question_file.write('text:' + '\n'.join(all_turns[:i]) + '\tlabels:' + '\tepisode_done:True\n')
             label_file.write(label + '\n')
             example_count += 1
-
-
-        # customer_turns = []
-        # concierge_turns = []
-        # for i, turn in enumerate(example['log']):
-        #     if i % 2 == 0:
-        #         customer_turns.append(turn['text'])
-        #         turn_count += 1
-        #     else:
-        #         concierge_turns.append(turn['text'])
-        # n_turns = len(customer_turns)
-        # for i in range(n_turns):
-        #     question_file.write('text:' + customer_turns[i] + '\tlabels:' + concierge_turns[i])
-        #     if i != n_turns-1:
-        #         question_file.write('\n')
-        #     else:
-        #         question_file.write('\tepisode_done:True\n')
-        #     label_file.write(label + '\n')
+            labels_dict[label] += 1
 
 n_train = int(0.75 * example_count)
 
 print('n_train:', n_train)
 print('n_test', example_count - n_train)
+
+print(labels_dict)
 
 # Save data info
 info = {'n_train': n_train,
