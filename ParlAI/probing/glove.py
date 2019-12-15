@@ -183,7 +183,21 @@ def process_task(task_name, save_dir, glove):
         embeddings = encode_glove(dialogs, glove, dict=dict)
 
     elif task_name == 'multi_woz':
-        raise NotImplementedError
+        data_dir = Path(project_dir, 'data', 'probing', 'multi_woz')
+        data = open(data_dir.joinpath('multi_woz.txt'))
+
+        examples = []
+        for line in data:
+            line = line.rstrip('\n')
+            turn = line.split('\t')[0]
+            if turn.startswith('text:'):
+                # start a new episode
+                episode = []
+                turn = turn[len('text:'):]
+            episode.append(turn)
+
+            if 'episode_done:True' in line:
+                examples.append(' '.join(episode))
 
     else:
         raise NotImplementedError(f'Probing task: {task_name} not supported')
