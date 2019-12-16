@@ -199,6 +199,8 @@ def process_task(task_name, save_dir, glove):
             if 'episode_done:True' in line:
                 examples.append(' '.join(episode))
 
+        embeddings = encode_glove(examples, glove, dict=dict)
+
     else:
         raise NotImplementedError(f'Probing task: {task_name} not supported')
 
