@@ -1,7 +1,7 @@
 # Probing Neural Dialog Systems for Conversational Understanding
-Implementation for the probing experiments in "Probing Neural Dialog Systems for Conversational Understanding," a final project for CS281 at Harvard.
+Implementation for the probing experiments in "Probing Neural Dialog Systems for Conversational Understanding," a final project for CS281 at Harvard. Please cite our final report if you find this code useful. 
 
-This code is mostly built on top of [ParlAI](https://parl.ai/). We add functionality for probing different types of models (RNNs, Transformers). We also add and parse a variety of different datasets to probe for conversational understanding. We also include functionality for training models on shuffled datasets to isolate the effect of the dialog structure on downstream model performance. 
+This code is mostly built on top of [ParlAI](https://parl.ai/). We add functionality for probing different types of models (RNNs, Transformers). We also add and parse a variety of different datasets to probe for conversational understanding. We also include functionality for training models on shuffled datasets to isolate the effect of the dialog structure on downstream model performance.
 
 
 ## Prerequisites
