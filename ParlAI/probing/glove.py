@@ -199,6 +199,23 @@ def process_task(task_name, save_dir, glove):
             if 'episode_done:True' in line:
                 examples.append(' '.join(episode))
 
+    elif task_name == 'squad':
+        data_dir = Path(project_dir, 'data', 'probing', 'squad')
+        data = open(data_dir.joinpath('squad.txt'))
+
+        examples = []
+        for line in data:
+            line = line.rstrip('\n')
+            turn = line.split('\t')[0]
+            if turn.startswith('text:'):
+                # start a new episode
+                question = []
+                turn = turn[len('text:'):]
+            question.append(turn)
+
+            if 'episode_done:True' in line:
+                examples.append(' '.join(question))
+
     else:
         raise NotImplementedError(f'Probing task: {task_name} not supported')
 
