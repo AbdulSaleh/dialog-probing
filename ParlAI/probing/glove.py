@@ -201,6 +201,25 @@ def process_task(task_name, save_dir, glove):
 
         embeddings = encode_glove(examples, glove, dict=dict)
 
+    elif task_name == 'squad':
+        data_dir = Path(project_dir, 'data', 'probing', 'squad')
+        data = open(data_dir.joinpath('squad.txt'))
+
+        examples = []
+        for line in data:
+            line = line.rstrip('\n')
+            turn = line.split('\t')[0]
+            if turn.startswith('text:'):
+                # start a new episode
+                episode = []
+                turn = turn[len('text:'):]
+            episode.append(turn)
+
+            if 'episode_done:True' in line:
+                examples.append(' '.join(episode))
+
+        embeddings = encode_glove(examples, glove, dict=dict)
+
     else:
         raise NotImplementedError(f'Probing task: {task_name} not supported')
 
