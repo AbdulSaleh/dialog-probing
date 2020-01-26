@@ -28,9 +28,9 @@ def setup_args():
                              'Model directory of embeddings to be probed.'
                              'Assumes models saved to ParlAI\\trained')
 
-    parser.add_argument('-r', '--run', type=int, default=1,
-                        help='Logs and checkpoints saved to model/probing/runs/(run number)\n'
-                             'Useful for confidence intervals')
+    parser.add_argument('-r', '--runs', type=int, default=1,
+                        help='Number of times to train MLP with new random inits each time.\n'
+                             'Required for creating confidence intervals')
 
     parser.add_argument('-ep', '--max_epochs', type=int, default=200)
     parser.add_argument('-bs', '--batch_size', type=int, default=128)
@@ -45,10 +45,9 @@ if __name__ == '__main__':
     opt = setup_args()
     task_name = opt['task']
     model = opt['model']
-    run = str(opt['run'])
+    runs = opt['runs']
 
     project_dir = Path(__file__).resolve().parent.parent
-    save_dir = project_dir.joinpath('trained', model, 'probing', task_name, 'runs', run)
 
     # Load embeddings
     embeddings_path = project_dir.joinpath('trained', model, 'probing',
@@ -95,59 +94,87 @@ if __name__ == '__main__':
     output_dim = 1 if len(set(y)) == 2 else len(set(y))
     Net = NeuralNetBinaryClassifier if len(set(y)) == 2 else NeuralNetClassifier
 
-    # Init skorch classifier
-    print('Initializing MLP!')
-    net = Net(
-        # Architecture
-        module=MLP,
-        module__input_dim=input_dim,
-        module__output_dim=output_dim,
-        module__hidden_dim=opt['hidden_layer_dim'],
-        module__dropout=0.5,
-        device='cuda',
-        # Training
-        max_epochs=opt['max_epochs'],
-        batch_size=opt['batch_size'],
-        callbacks=[Checkpoint(dirname=save_dir,
-                              f_params='params.pt',
-                              f_optimizer=None,
-                              f_history=None,
-                              monitor='valid_loss_best')],
-        # train_split is validation data
-        train_split=predefined_split(Dataset(X_val, y_val)),
-        # Optimizer
-        optimizer=optim.Adam,
-        lr=opt['learning_rate'],
-        # Data
-        iterator_train__shuffle=True,
-    )
+    # Compile test acc for conf intervals
+    test_acc_list = []
+    for run in range(1, runs+1):
+        print('')
+        print(15 * '*')
+        print(f'Starting Run number: {run}')
+        print(15 * '*')
+        print('')
 
-    net.fit(X_train, y_train)
-    net.load_params(save_dir.joinpath('params.pt'))
+        save_dir = project_dir.joinpath('trained', model, 'probing', task_name, 'runs', str(run))
 
-    # Evaluate
-    preds = net.predict(X_train)
-    train_acc = accuracy_score(y_train, preds)
+        # Init skorch classifier
+        print('Initializing MLP!')
+        net = Net(
+            # Architecture
+            module=MLP,
+            module__input_dim=input_dim,
+            module__output_dim=output_dim,
+            module__hidden_dim=opt['hidden_layer_dim'],
+            module__dropout=0.5,
+            device='cuda',
+            # Training
+            max_epochs=opt['max_epochs'],
+            batch_size=opt['batch_size'],
+            callbacks=[Checkpoint(dirname=save_dir,
+                                  f_params='params.pt',
+                                  f_optimizer=None,
+                                  f_history=None,
+                                  monitor='valid_loss_best')],
+            # train_split is validation data
+            train_split=predefined_split(Dataset(X_val, y_val)),
+            # Optimizer
+            optimizer=optim.Adam,
+            lr=opt['learning_rate'],
+            # Data
+            iterator_train__shuffle=True,
+            verbose=(runs == 1)
+        )
 
-    preds = net.predict(X_val)
-    val_acc = accuracy_score(y_val, preds)
+        net.fit(X_train, y_train)
 
-    preds = net.predict(X_test)
-    test_acc = accuracy_score(y_test, preds)
+        # Reload best valid loss checkpoint
+        net.load_params(save_dir.joinpath('params.pt'))
 
-    # Save results
-    results = {'test_acc': test_acc,
-               'val_acc': val_acc,
-               'train_acc': train_acc,
-               'model': model,
-               'task': task_name,
-               'architecture': str(net),
-               'history': net.history}
+        # Evaluate
+        preds = net.predict(X_train)
+        train_acc = accuracy_score(y_train, preds)
 
-    print(f'Test acc: {test_acc}',
-          f'Valid acc: {val_acc}',
-          f'Train acc: {train_acc}')
+        preds = net.predict(X_val)
+        val_acc = accuracy_score(y_val, preds)
 
-    results_path = save_dir.joinpath('training_results.json')
-    print(f'Saving training results to {results_path}')
-    json.dump(results, open(results_path, 'w'))
+        preds = net.predict(X_test)
+        test_acc = accuracy_score(y_test, preds)
+
+        # Save results
+        results = {'test_acc': test_acc,
+                   'val_acc': val_acc,
+                   'train_acc': train_acc,
+                   'model': model,
+                   'task': task_name,
+                   'architecture': str(net),
+                   'history': net.history}
+
+        print(f'Test acc: {test_acc}',
+              f'Valid acc: {val_acc}',
+              f'Train acc: {train_acc}')
+
+        results_path = save_dir.joinpath('training_results.json')
+        print(f'Saving training results to {results_path}')
+        json.dump(results, open(results_path, 'w'))
+
+        # Keep track for confidence interval
+        test_acc_list.append(test_acc)
+
+    # Calculate confidence intervals
+    confidence_dir = project_dir.joinpath('trained', model, 'probing', task_name, 'runs')
+    confidence_path = confidence_dir.joinpath('confidence.json')
+    mean = np.mean(test_acc_list)
+    std = np.std(test_acc_list)
+    confidence = {'mean': mean,
+                  'lower': mean - 2 * std,
+                  'upper': mean + 2 * std,
+                  'std': std}
+    json.dump(confidence, open(confidence_path, 'w'))
