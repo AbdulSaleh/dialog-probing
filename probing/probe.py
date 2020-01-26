@@ -28,6 +28,10 @@ def setup_args():
                              'Model directory of embeddings to be probed.'
                              'Assumes models saved to ParlAI\\trained')
 
+    parser.add_argument('-r', '--run', type=int, default=1,
+                        help='Logs and checkpoints saved to model/probing/runs/(run number)\n'
+                             'Useful for confidence intervals')
+
     parser.add_argument('-ep', '--max_epochs', type=int, default=200)
     parser.add_argument('-bs', '--batch_size', type=int, default=128)
 
@@ -41,9 +45,10 @@ if __name__ == '__main__':
     opt = setup_args()
     task_name = opt['task']
     model = opt['model']
+    run = str(opt['run'])
 
     project_dir = Path(__file__).resolve().parent.parent
-    save_dir = project_dir.joinpath('trained', model, 'probing', task_name)
+    save_dir = project_dir.joinpath('trained', model, 'probing', task_name, 'runs', run)
 
     # Load embeddings
     embeddings_path = project_dir.joinpath('trained', model, 'probing',
@@ -105,6 +110,8 @@ if __name__ == '__main__':
         batch_size=opt['batch_size'],
         callbacks=[Checkpoint(dirname=save_dir,
                               f_params='params.pt',
+                              f_optimizer=None,
+                              f_history=None,
                               monitor='valid_loss_best')],
         # train_split is validation data
         train_split=predefined_split(Dataset(X_val, y_val)),
