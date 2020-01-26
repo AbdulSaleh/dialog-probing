@@ -180,6 +180,7 @@ if __name__ == '__main__':
                   'lower': mean - 2 * std,
                   'upper': mean + 2 * std,
                   'std': std}
+    print(confidence)
     json.dump(confidence, open(confidence_path, 'w'))
 
     print("Time elapsed: {:0.1f} minutes".format((time() - start)/60))
