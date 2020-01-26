@@ -43,6 +43,7 @@ if __name__ == '__main__':
     model = opt['model']
 
     project_dir = Path(__file__).resolve().parent.parent
+    save_dir = project_dir.joinpath('trained', model, 'probing', task_name)
 
     # Load embeddings
     embeddings_path = project_dir.joinpath('trained', model, 'probing',
@@ -102,7 +103,9 @@ if __name__ == '__main__':
         # Training
         max_epochs=opt['max_epochs'],
         batch_size=opt['batch_size'],
-        callbacks=[Checkpoint(monitor='valid_loss_best')],
+        callbacks=[Checkpoint(dirname=save_dir,
+                              f_params='params.pt',
+                              monitor='valid_loss_best')],
         # train_split is validation data
         train_split=predefined_split(Dataset(X_val, y_val)),
         # Optimizer
@@ -113,6 +116,7 @@ if __name__ == '__main__':
     )
 
     net.fit(X_train, y_train)
+    net.load_params(save_dir.joinpath('params.pt'))
 
     # Evaluate
     preds = net.predict(X_train)
@@ -137,7 +141,6 @@ if __name__ == '__main__':
           f'Valid acc: {val_acc}',
           f'Train acc: {train_acc}')
 
-    results_path = project_dir.joinpath('trained', model, 'probing',
-                                        task_name, 'training_results.json')
+    results_path = save_dir.joinpath('training_results.json')
     print(f'Saving training results to {results_path}')
     json.dump(results, open(results_path, 'w'))
