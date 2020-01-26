@@ -1266,7 +1266,7 @@ class ParlAIDialogTeacher(FixedDialogTeacher):
         #     eps[-1].force_set('episode_done', True)
         #     self.episodes.append(eps)
 
-        if self.opt['probe']:
+        if self.opt.get('probe', False):
             # When probing, read all history as one observation
             for line in read:
                 line = line.rstrip('\n')
