@@ -28,7 +28,7 @@ def setup_args():
                              'Model directory of embeddings to be probed.'
                              'Assumes models saved to ParlAI\\trained')
 
-    parser.add_argument('-ep', '--max_epochs', type=int, default=100)
+    parser.add_argument('-ep', '--max_epochs', type=int, default=200)
     parser.add_argument('-bs', '--batch_size', type=int, default=128)
 
     parser.add_argument('-hidden', '--hidden_layer_dim', type=int, default=128)
