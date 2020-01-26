@@ -3,6 +3,7 @@
 import json
 import pickle
 import argparse
+from time import time
 from pathlib import Path
 
 import numpy as np
@@ -42,6 +43,8 @@ def setup_args():
 
 
 if __name__ == '__main__':
+    start = time()
+
     opt = setup_args()
     task_name = opt['task']
     model = opt['model']
@@ -178,3 +181,5 @@ if __name__ == '__main__':
                   'upper': mean + 2 * std,
                   'std': std}
     json.dump(confidence, open(confidence_path, 'w'))
+
+    print("Time elapsed: {:0.1f} minutes".format((time() - start)/60))
