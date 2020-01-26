@@ -102,7 +102,7 @@ if __name__ == '__main__':
         # Training
         max_epochs=opt['max_epochs'],
         batch_size=opt['batch_size'],
-        #callbacks=[Checkpoint(monitor='valid_acc_best')],
+        callbacks=[Checkpoint(monitor='valid_loss_best')],
         # train_split is validation data
         train_split=predefined_split(Dataset(X_val, y_val)),
         # Optimizer
