@@ -133,8 +133,10 @@ def _eval_single_world(opt, agent, task):
         print(f"Creating pickle file to save {task_name} probing outputs at {save_path}")
         print("*" * 10, "\n", "*" * 10)
         # Save probing outputs
-        with open(save_path, 'wb') as f:
-            pickle.dump(world.world.agents[1].probing_outputs, f)
+        try:
+            pickle.dump(world.world.agents[1].probing_outputs, open(save_path, 'wb'))
+        except:
+            pickle.dump(world.world.agents[1].probing_outputs, open(save_path, 'w'), protocol=4)
 
     report = world.report()
     world.reset()
