@@ -6,6 +6,7 @@ flake8-docstrings
 flake8-bugbear
 flake8
 gitpython
+gpt-2-simple
 h5py
 joblib
 nltk
@@ -21,9 +22,12 @@ scipy
 sh
 sphinx
 sphinx_rtd_theme
+tensorflow==1.15
+textblob
 tqdm
 websocket-client
 websocket-server
+pytorch-pretrained-bert
 py-rouge
 pre-commit
 docutils<0.15
