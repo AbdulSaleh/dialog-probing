@@ -1005,6 +1005,16 @@ task_list = [
         ),
     },
     {
+        "id": "DailyDialogAugmented",
+        "display_name": "Daily Dialog - Augmented",
+        "task": "dailydialog_augmented",
+        "tags": ["All", "ChitChat"],
+        "description": (
+            "Augmented Daily Dialog dataset using "
+            "https://medium.com/wluper/methods-to-grow-your-own-data-sets-for-conversational-ai-1bfeac9508ef"
+        ),
+    },
+    {
         "id": "EmpatheticDialogues",
         "display_name": "Empathetic Dialogues",
         "task": "empathetic_dialogues",
