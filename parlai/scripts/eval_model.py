@@ -136,7 +136,7 @@ def _eval_single_world(opt, agent, task):
         try:
             pickle.dump(world.world.agents[1].probing_outputs, open(save_path, 'wb'))
         except:
-            pickle.dump(world.world.agents[1].probing_outputs, open(save_path, 'w'), protocol=4)
+            pickle.dump(world.world.agents[1].probing_outputs, open(save_path, 'wb'), protocol=4)
 
     report = world.report()
     world.reset()
