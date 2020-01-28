@@ -246,7 +246,8 @@ if not os.path.exists(os.path.join('models', model_name)):
 sess = gpt2.start_tf_sess()
 gpt2.load_gpt2(
   sess, 
-  model_name=model_name
+  model_name=model_name,
+  multi_gpu=True
 )
 
 def extend_conversations(examples):
@@ -261,7 +262,7 @@ def _extend_conversation(conversation_as_string):
     model_name=model_name,
     prefix=conversation_as_string,
     length=100,
-    return_as_list = True
+    return_as_list=True
   )
   n = len(
     sent_tokenize(
