@@ -35,7 +35,7 @@ def build(opt):
             data = []
             print('augmenting dailydialog')
             for line in f:
-                dialog = map(lambda obj_dialog: obj_dialog['text'], json.loads(line)['dialogue'])
+                dialog = list(map(lambda obj_dialog: obj_dialog['text'], json.loads(line)['dialogue']))
                 data.append(dialog)
             augmented_data = augment_dataset(data)
             def package_dialog(dialog):

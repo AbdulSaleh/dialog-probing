@@ -9,8 +9,14 @@ Original file is located at
 # Text Augmentation
 """
 
+from math import floor
 import os
+from random import sample
 from tqdm import tqdm
+
+# proportion of words in example to replace with bert generations
+# insertion_proportion of 1.0 is equivalent to original behavior
+insertion_proportion = 0.3
 
 # conversation_dataset = [
 #   ["hi","how are you","fine thanks","great. Take care"],
@@ -209,9 +215,15 @@ def _insert_mask_and_predict(sentence, model, tokeniser, masked_idx):
 
 def _insert_words(example):
   new_examples = [example]
-  idx = 1
+  num_words = len(
+    word_tokenize(
+      example
+    )
+  )
+  num_words_to_insert = max(1, floor(insertion_proportion * num_words))
+  idxs = sample(list((range(1, num_words))), num_words_to_insert)
   try:
-    while True:
+    for idx in idxs:
       new_examples.append(
         _insert_mask_and_predict(
           sentence = example,
@@ -220,10 +232,11 @@ def _insert_words(example):
           masked_idx = idx
         )
       )
-      idx += 1
   except:
     new_examples.pop()
     return new_examples
+  new_examples.pop()
+  return new_examples
 
 def bert_inserted_examples(examples):
   new_examples = []
@@ -237,7 +250,7 @@ def bert_inserted_examples(examples):
 
 """## Generating longer conversations (using GPT-2)"""
 
-from nltk.tokenize import sent_tokenize
+from nltk.tokenize import sent_tokenize, word_tokenize
 import gpt_2_simple as gpt2
 # TODO THis was originall 744M but that didn't fit on my gpu
 model_name = "345M"
@@ -260,7 +273,7 @@ def _extend_conversation(conversation_as_string):
     sess,
     model_name=model_name,
     prefix=conversation_as_string,
-    length=100,
+    length=10,
     return_as_list = True
   )
   n = len(
@@ -276,8 +289,8 @@ def _extend_conversation(conversation_as_string):
 """# Pipeline"""
 
 def augment_dataset(dataset):
-  print('extending')
-  dataset = extend_conversations(dataset)
+  # print('extending')
+  # dataset = extend_conversations(dataset)
   print('bert inserting')
   dataset = bert_inserted_examples(dataset)
   print('rephrasing')
