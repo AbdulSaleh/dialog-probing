@@ -11,12 +11,18 @@ Original file is located at
 
 from math import floor
 import os
-from random import sample
+from random import random, sample, seed
 from tqdm import tqdm
+
+seed(42)
 
 # proportion of words in example to replace with bert generations
 # insertion_proportion of 1.0 is equivalent to original behavior
 insertion_proportion = 0.3
+
+# proportion of sentences to rephrase via translations
+# rephrase_proportion of 1.0 is equivalent to original behavior
+rephrase_proportion = 0.5
 
 # conversation_dataset = [
 #   ["hi","how are you","fine thanks","great. Take care"],
@@ -144,18 +150,19 @@ def rephrase_examples(examples):
   repeat_rephrasings = []
   for example in tqdm(examples):
     for idx,sentence in enumerate(example):
-      sentence_spun_from_spanish = _spin_text(sentence, "es")
-      if sentence_spun_from_spanish and sentence_spun_from_spanish not in repeat_rephrasings:
-        repeat_rephrasings.append(sentence_spun_from_spanish)
-        rephrased_examples.append(
-          example[:idx] + [sentence_spun_from_spanish] + example[idx+1:]
-        )
-      sentence_spun_from_arabic = _spin_text(sentence, "ar")
-      if sentence_spun_from_arabic and sentence_spun_from_arabic not in repeat_rephrasings:
-        repeat_rephrasings.append(sentence_spun_from_arabic)
-        rephrased_examples.append(
-          example[:idx] + [sentence_spun_from_arabic] + example[idx+1:]
-        )
+      if random() <= rephrase_proportion:
+        sentence_spun_from_spanish = _spin_text(sentence, "es")
+        if sentence_spun_from_spanish and sentence_spun_from_spanish not in repeat_rephrasings:
+          repeat_rephrasings.append(sentence_spun_from_spanish)
+          rephrased_examples.append(
+            example[:idx] + [sentence_spun_from_spanish] + example[idx+1:]
+          )
+      # sentence_spun_from_arabic = _spin_text(sentence, "ar")
+      # if sentence_spun_from_arabic and sentence_spun_from_arabic not in repeat_rephrasings:
+      #   repeat_rephrasings.append(sentence_spun_from_arabic)
+      #   rephrased_examples.append(
+      #     example[:idx] + [sentence_spun_from_arabic] + example[idx+1:]
+      #   )
   return examples + rephrased_examples
 
 """## Inserting words (using BERT)"""
@@ -292,8 +299,8 @@ def _extend_conversation(conversation_as_string):
 def augment_dataset(dataset):
   # print('extending')
   # dataset = extend_conversations(dataset)
-  print('bert inserting')
-  dataset = bert_inserted_examples(dataset)
+  # print('bert inserting')
+  # dataset = bert_inserted_examples(dataset)
   print('rephrasing')
   dataset = rephrase_examples(dataset)
   print('synonomizing')
