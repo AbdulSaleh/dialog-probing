@@ -103,8 +103,8 @@ def _convert_nltk_to_wordnet_tag(pos_tag):
 
 def synonymous_examples(examples, include_verbs = False):
   synonymous = []
-  for example in examples:
-    for idx, sentence in tqdm(enumerate(example)):
+  for example in tqdm(examples):
+    for idx, sentence in enumerate(example):
       tokens = _tokenise(sentence)
       tagged_words = _infer_pos_tags(tokens)
       for jdx,word_pos in enumerate(tagged_words):
@@ -299,8 +299,8 @@ def _extend_conversation(conversation_as_string):
 def augment_dataset(dataset):
   # print('extending')
   # dataset = extend_conversations(dataset)
-  # print('bert inserting')
-  # dataset = bert_inserted_examples(dataset)
+  print('bert inserting')
+  dataset = bert_inserted_examples(dataset)
   print('rephrasing')
   dataset = rephrase_examples(dataset)
   print('synonomizing')
