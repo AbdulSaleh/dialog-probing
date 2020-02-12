@@ -870,14 +870,12 @@ class ParlaiParser(argparse.ArgumentParser):
     def _load_opts(self, opt):
         optfile = opt.get('init_opt')
         new_opt = load_opt_file(optfile)
-        print(opt)
-        print(new_opt)
         for key, value in new_opt.items():
             # existing command line parameters take priority.
             if key not in opt:
-                raise RuntimeError(
-                    'Trying to set opt from file that does not exist: ' + str(key)
-                )
+                # raise RuntimeError(
+                #     'Trying to set opt from file that does not exist: ' + str(key)
+                # )
             if key not in opt['override']:
                 opt[key] = value
                 opt['override'][key] = value
