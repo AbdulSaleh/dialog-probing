@@ -872,7 +872,8 @@ class ParlaiParser(argparse.ArgumentParser):
         new_opt = load_opt_file(optfile)
         for key, value in new_opt.items():
             # existing command line parameters take priority.
-            # if key not in opt:
+            if key not in opt:
+                continue
                 # raise RuntimeError(
                 #     'Trying to set opt from file that does not exist: ' + str(key)
                 # )
