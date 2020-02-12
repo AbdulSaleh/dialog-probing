@@ -870,6 +870,7 @@ class ParlaiParser(argparse.ArgumentParser):
     def _load_opts(self, opt):
         optfile = opt.get('init_opt')
         new_opt = load_opt_file(optfile)
+        print(new_opt)
         for key, value in new_opt.items():
             # existing command line parameters take priority.
             if key not in opt:
