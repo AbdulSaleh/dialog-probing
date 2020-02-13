@@ -56,8 +56,11 @@ def process_task(task_name, save_dir, glove):
         dev_data = csv.DictReader(open(dev_path, 'r'), dialect='excel-tab')
         data = chain(train_data, dev_data)
 
-        examples = [example['sentence1'] + ' ' + example['sentence2'] for example in data]
-        embeddings = encode_glove(examples, glove, dict=dict)
+        sent1 = [example['sentence1'] for example in data]
+        sent2 = [example['sentence2'] for example in data]
+        sent1 = encode_glove(sent1, glove, dict=dict)
+        sent2 = encode_glove(sent2, glove, dict=dict)
+        embeddings = np.hstack((sent1, sent2))
 
     elif task_name == 'multinli':
         MULTINLI_PREMISE_KEY = 'sentence1'
@@ -75,7 +78,7 @@ def process_task(task_name, save_dir, glove):
 
         premises = []
         hypos = []
-        for line in data[:10]:
+        for line in data:
             premise = line[MULTINLI_PREMISE_KEY]
             hypo = line[MULTINLI_HYPO_KEY]
             premises.append(premise)
