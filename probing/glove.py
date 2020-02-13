@@ -54,10 +54,9 @@ def process_task(task_name, save_dir, glove):
 
         train_data = csv.DictReader(open(train_path, 'r'), dialect='excel-tab')
         dev_data = csv.DictReader(open(dev_path, 'r'), dialect='excel-tab')
-        data = chain(train_data, dev_data)
 
-        sent1 = [example['sentence1'] for example in data]
-        sent2 = [example['sentence2'] for example in data]
+        sent1 = [example['sentence1'] for example in chain(train_data, dev_data)]
+        sent2 = [example['sentence2'] for example in chain(train_data, dev_data)]
         sent1 = encode_glove(sent1, glove, dict=dict)
         sent2 = encode_glove(sent2, glove, dict=dict)
         embeddings = np.hstack((sent1, sent2))
