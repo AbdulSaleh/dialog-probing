@@ -5,6 +5,7 @@ import argparse
 from pathlib import Path
 import csv
 from itertools import chain
+import numpy as np
 from probing.utils import load_glove, encode_glove
 
 
@@ -72,12 +73,16 @@ def process_task(task_name, save_dir, glove):
         test = [json.loads(l) for l in open(test_path)]
         data = train + dev + test
 
-        examples = []
-        for line in data:
+        premises = []
+        hypos = []
+        for line in data[:10]:
             premise = line[MULTINLI_PREMISE_KEY]
             hypo = line[MULTINLI_HYPO_KEY]
-            examples.append(premise + ' ' + hypo)
-        embeddings = encode_glove(examples, glove, dict=dict)
+            premises.append(premise)
+            hypos.append(hypo)
+        premises = encode_glove(premises, glove, dict=dict)
+        hypos = encode_glove(hypos, glove, dict=dict)
+        embeddings = np.hstack((premises, hypos))
 
     elif task_name == 'snips':
         labels = ['AddToPlaylist', 'BookRestaurant', 'GetWeather', 'PlayMusic',
