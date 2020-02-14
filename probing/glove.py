@@ -5,6 +5,7 @@ import argparse
 from pathlib import Path
 import csv
 from itertools import chain
+import numpy as np
 from probing.utils import load_glove, encode_glove
 
 
@@ -53,10 +54,13 @@ def process_task(task_name, save_dir, glove):
 
         train_data = csv.DictReader(open(train_path, 'r'), dialect='excel-tab')
         dev_data = csv.DictReader(open(dev_path, 'r'), dialect='excel-tab')
-        data = chain(train_data, dev_data)
+        data = list(chain(train_data, dev_data))
 
-        examples = [example['sentence1'] + ' ' + example['sentence2'] for example in data]
-        embeddings = encode_glove(examples, glove, dict=dict)
+        sent1 = [example['sentence1'] for example in data]
+        sent2 = [example['sentence2'] for example in data]
+        sent1 = encode_glove(sent1, glove, dict=dict)
+        sent2 = encode_glove(sent2, glove, dict=dict)
+        embeddings = np.hstack((sent1, sent2))
 
     elif task_name == 'multinli':
         MULTINLI_PREMISE_KEY = 'sentence1'
@@ -72,12 +76,16 @@ def process_task(task_name, save_dir, glove):
         test = [json.loads(l) for l in open(test_path)]
         data = train + dev + test
 
-        examples = []
+        premises = []
+        hypos = []
         for line in data:
             premise = line[MULTINLI_PREMISE_KEY]
             hypo = line[MULTINLI_HYPO_KEY]
-            examples.append(premise + ' ' + hypo)
-        embeddings = encode_glove(examples, glove, dict=dict)
+            premises.append(premise)
+            hypos.append(hypo)
+        premises = encode_glove(premises, glove, dict=dict)
+        hypos = encode_glove(hypos, glove, dict=dict)
+        embeddings = np.hstack((premises, hypos))
 
     elif task_name == 'snips':
         labels = ['AddToPlaylist', 'BookRestaurant', 'GetWeather', 'PlayMusic',

@@ -873,9 +873,10 @@ class ParlaiParser(argparse.ArgumentParser):
         for key, value in new_opt.items():
             # existing command line parameters take priority.
             if key not in opt:
-                raise RuntimeError(
-                    'Trying to set opt from file that does not exist: ' + str(key)
-                )
+                continue
+                # raise RuntimeError(
+                #     'Trying to set opt from file that does not exist: ' + str(key)
+                # )
             if key not in opt['override']:
                 opt[key] = value
                 opt['override'][key] = value
