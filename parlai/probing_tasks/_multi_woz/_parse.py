@@ -8,19 +8,16 @@ import json
 import random
 random.seed(0)
 
-labels = ['Attraction-Inform', 'Restaurant-Request', 'general-bye', 'general-thank', 'Restaurant-Inform',
-          'Hotel-Request', 'Police-Request', 'Police-Inform', 'Hospital-Request', 'Train-Request', 'general-greet',
-          'Taxi-Inform', 'Taxi-Request', 'Hotel-Inform', 'Hospital-Inform', 'Train-Inform', 'Attraction-Request']
-
-labels_dict = {label: 0 for label in labels}
-examples_dict = {label: [] for label in labels}
+labels = ['taxi', 'police', 'restaurant', 'hospital', 'hotel', 'attraction', 'train']
+labels_dict = {'taxi': 0, 'police': 0, 'restaurant': 0, 'hospital': 0, 'hotel': 0, 'attraction': 0, 'train': 0}
+examples_dict = {'taxi': [], 'police': [], 'restaurant': [], 'hospital': [], 'hotel': [], 'attraction': [], 'train': []}
 master_train = []
 master_test = []
 
 project_dir = Path(__file__).resolve().parent.parent.parent.parent
-data_dir = Path(project_dir, 'ParlAI', 'data', 'probing', 'multi_woz2')
+data_dir = Path(project_dir, 'data', 'probing', 'multi_woz')
 
-question_path = data_dir.joinpath('multi_woz2.txt')
+question_path = data_dir.joinpath('multi_woz.txt')
 label_path = data_dir.joinpath('labels.txt')
 info_path = data_dir.joinpath('info.pkl')
 
@@ -28,32 +25,27 @@ question_file = open(question_path, 'w')
 label_file = open(label_path, 'w')
 info_file = open(info_path, 'wb')
 
-with open(str(data_dir.joinpath('multi_woz2_data.json')), encoding='latin-1') as json_file:
+with open(str(data_dir.joinpath('multi_woz_data.json')), encoding='latin-1') as json_file:
     dataset = json.load(json_file)
     for ep in dataset:
         example = dataset[ep]
-
-        try:
-            all_turns = [turn['text'] for turn in example['log']]
-            all_dialog_acts = [[act_type for act_type in turn['dialog_act']] for turn in example['log']]
-            user_dialog_acts = [all_dialog_acts[i] for i in range(0, len(all_dialog_acts), 2)]
-        except KeyError:
+        example_subjs = []
+        for subj_type in labels:
+            if example['goal'][subj_type] != {}:
+                example_subjs.append(subj_type)
+        if len(example_subjs) > 1:
             continue
+        label = example_subjs[0]
 
-        possible_turns = []
-        for i in range(len(user_dialog_acts)):
-            if len(user_dialog_acts[i]) == 1:
-                possible_turns.append(i)
+        example_list = [label]
 
-        if len(possible_turns) == 0:
-            continue
-
-        chosen_turn = random.choice(possible_turns)
-        chosen_text = 'text:' + '\n'.join(all_turns[:chosen_turn*2+1]) + '\tlabels:' + '\tepisode_done:True\n'
-        dialog_act = user_dialog_acts[chosen_turn][0]
-
-        labels_dict[dialog_act] += 1
-        examples_dict[dialog_act].append([dialog_act, chosen_text])
+        all_turns = [turn['text'] for turn in example['log']]
+        for i in range(1, len(all_turns)):
+            example_list.append('text:' + '\n'.join(all_turns[:i]) + '\tlabels:' + '\tepisode_done:True\n')
+            # question_file.write('text:' + '\n'.join(all_turns[:i]) + '\tlabels:' + '\tepisode_done:True\n')
+            # label_file.write(label + '\n')
+            labels_dict[label] += 1
+        examples_dict[label].append(example_list)
 
 n_train = 0
 n_test = 0

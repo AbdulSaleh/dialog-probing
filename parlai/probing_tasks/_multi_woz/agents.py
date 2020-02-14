@@ -14,7 +14,7 @@ import os
 def _path(opt):
     # Build the data if it doesn't exist.
     build(opt)
-    return os.path.join(opt['datapath'], 'probing', 'multi_woz2', 'multi_woz2.txt')
+    return os.path.join(opt['datapath'], 'probing', 'multi_woz', 'multi_woz.txt')
 
 
 class DefaultTeacher(ParlAIDialogTeacher):

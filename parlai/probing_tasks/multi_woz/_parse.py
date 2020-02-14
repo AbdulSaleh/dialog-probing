@@ -3,16 +3,11 @@ Note that this script should be manually run by the user and not through ParlAI
 to process the data, and hence _parse.py instead of parse.py.
 """
 from pathlib import Path
+from collections import Counter
 import pickle
 import json
 import random
 random.seed(0)
-
-labels = ['taxi', 'police', 'restaurant', 'hospital', 'hotel', 'attraction', 'train']
-labels_dict = {'taxi': 0, 'police': 0, 'restaurant': 0, 'hospital': 0, 'hotel': 0, 'attraction': 0, 'train': 0}
-examples_dict = {'taxi': [], 'police': [], 'restaurant': [], 'hospital': [], 'hotel': [], 'attraction': [], 'train': []}
-master_train = []
-master_test = []
 
 project_dir = Path(__file__).resolve().parent.parent.parent.parent
 data_dir = Path(project_dir, 'data', 'probing', 'multi_woz')
@@ -25,65 +20,51 @@ question_file = open(question_path, 'w')
 label_file = open(label_path, 'w')
 info_file = open(info_path, 'wb')
 
-with open(str(data_dir.joinpath('multi_woz_data.json')), encoding='latin-1') as json_file:
+with open(data_dir.joinpath('data.json'), encoding='latin-1') as json_file:
     dataset = json.load(json_file)
-    for ep in dataset:
-        example = dataset[ep]
-        example_subjs = []
-        for subj_type in labels:
-            if example['goal'][subj_type] != {}:
-                example_subjs.append(subj_type)
-        if len(example_subjs) > 1:
-            continue
-        label = example_subjs[0]
+    test_codes = set(open(data_dir.joinpath('testListFile.txt')).read().splitlines())
+    valid_codes = set(open(data_dir.joinpath('valListFile.txt')).read().splitlines())
+    train_codes = set(dataset.keys()) - valid_codes - test_codes
+    splits = {'train': train_codes, 'dev': valid_codes, 'test': test_codes}
 
-        example_list = [label]
+    info = {'n_train': 0, 'n_dev': 0, 'n_test': 0}
+    dialogs = []
+    labels = []
+    for split, codes in splits.items():
+        for c in codes:
+            example = dataset[c]
+            try:
+                turns = [turn['text'] for turn in example['log']]
+                dialog_acts = [[act_type for act_type in turn['dialog_act']] for turn in example['log']]
+            except KeyError:
+                continue
 
-        all_turns = [turn['text'] for turn in example['log']]
-        for i in range(1, len(all_turns)):
-            example_list.append('text:' + '\n'.join(all_turns[:i]) + '\tlabels:' + '\tepisode_done:True\n')
-            # question_file.write('text:' + '\n'.join(all_turns[:i]) + '\tlabels:' + '\tepisode_done:True\n')
-            # label_file.write(label + '\n')
-            labels_dict[label] += 1
-        examples_dict[label].append(example_list)
+            possible_turns = []
+            for i in range(0, min(float('inf'), len(turns)), 2):
+                if len(set(dialog_acts[i])) == 1:
+                    possible_turns.append(i)
 
-n_train = 0
-n_test = 0
+            if len(possible_turns) == 0:
+                continue
 
-for lab in labels:
-    random.shuffle(examples_dict[lab])
-    lab_n_examples = len(examples_dict[lab])
-    lab_n_train = int(0.85 * lab_n_examples)
-    master_train += examples_dict[lab][:lab_n_train]
-    master_test += examples_dict[lab][lab_n_train:]
-
-random.shuffle(master_test)
-random.shuffle(master_train)
-
-for dialog in master_train:
-    label = dialog[0]
-    for i in range(1, len(dialog)):
-        question_file.write(dialog[i])
-        label_file.write(label + '\n')
-        n_train += 1
-
-for dialog in master_test:
-    label = dialog[0]
-    for i in range(1, len(dialog)):
-        question_file.write(dialog[i])
-        label_file.write(label + '\n')
-        n_test += 1
+            chosen_turn = random.choice(possible_turns)
+            dialogs.append('text:' + '\n'.join(turns[:chosen_turn+1])
+                           + '\tlabels:' + '\tepisode_done:True\n')
+            labels.append(dialog_acts[chosen_turn][0])
+            info['n_'+split] += 1
 
 
-print('n_train:', n_train)
-print('n_test', n_test)
-
-print(labels_dict)
-
-# Save data info
-info = {'n_train': n_train,
-        'n_test': n_test}
+for dialog, label in zip(dialogs, labels):
+    question_file.write(dialog)
+    label_file.write(label + '\n')
 
 pickle.dump(info, info_file)
 
+# Summary statistics
+train_stats = {label: count / info['n_train'] for label, count in Counter(labels[:info['n_train']]).items()}
+valid_stats = {label: count / info['n_dev'] for label, count in Counter(labels[info['n_train']:info['n_train']+info['n_dev']]).items()}
+test_stats = {label: count / info['n_test'] for label, count in Counter(labels[info['n_train']+info['n_dev']:]).items()}
 
+print("For train data", train_stats)
+print("For valid data", valid_stats)
+print("For test data", test_stats)
