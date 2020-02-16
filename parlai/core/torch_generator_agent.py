@@ -661,23 +661,6 @@ class TorchGeneratorAgent(TorchAgent):
         return Output(text, cand_choices)
 
 
-
-    # def probe_step(self, batch):
-    #     """Evaluate a single batch of examples."""
-    #     if batch.text_vec is None:
-    #         return
-    #     bsz = batch.text_vec.size(0)
-    #     # eval mode ok for probing since we probe behavior in inference mode
-    #     self.model.eval()
-    #     cand_scores = None
-    #
-    #     maxlen = self.label_truncate or 256
-    #     probing_vectors = self._probe(batch, maxlen)
-    #
-    #     return probing_vectors
-    #     # return Output(text, cand_choices)
-
-
     def _treesearch_factory(self, device):
         method = self.opt.get('inference', 'greedy')
         beam_size = self.opt.get('beam_size', 1)
@@ -767,14 +750,19 @@ class TorchGeneratorAgent(TorchAgent):
                 #          [batch size, num layers, hidden dim]) ~ (h, c)
                 # mask: [batch size, max seq len]
                 enc_outputs, hidden, mask = encoder_states
+                bsz = len(batch.text_lengths)
                 attention = (model.attn_type != 'none')
-                if attention or self.opt['average_utterance']:
-                    # Average encoder outputs.
+                if attention:
+                    # Average encoder outputs h_t.
                     # masked: [batch size, max seq len, hidden dim * 2]
                     masked = enc_outputs * mask.float().unsqueeze(2)
 
-                    # _utterance_embeddings: [batch size, hidden dim * num layers * 2]
+                    # _utterance_embeddings: [batch size, hidden dim * 2]
                     _utterance_embeddings = masked.sum(dim=1) / text_lengths
+                    # Concat final state c
+                    # _utterance_embeddings: [batch size, hidden dim * 2 + hidden dim * num layers]
+                    c = hidden[1].reshape(bsz, -1)
+                    _utterance_embeddings = torch.cat((_utterance_embeddings, c), dim=1)
 
                     utterance_embeddings = torch.zeros_like(_utterance_embeddings).cuda()
 
@@ -788,7 +776,6 @@ class TorchGeneratorAgent(TorchAgent):
                     # Use final hidden states (h, c)
                     # hidden: ([batch size, hidden dim * num layers],
                     #          [batch size, hidden dim * num layers])
-                    bsz = hidden[0].shape[0]
                     hidden = (hidden[0].reshape(bsz, -1),
                               hidden[1].reshape(bsz, -1))
 
@@ -874,14 +861,6 @@ class TorchGeneratorAgent(TorchAgent):
         beam_preds_scores = [b.get_top_hyp() for b in beams]
 
         return beam_preds_scores, beams
-
-    # def _probe(self, batch):
-    # """Modeled after self._generate """
-    #     model = self.model
-    #     if isinstance(model, torch.nn.parallel.DistributedDataParallel):
-    #         model = self.model.module
-    #     encoder_states = model.encoder(*self._model_input(batch))
-    #
 
 
 class _HypothesisTail(object):
