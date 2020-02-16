@@ -12,13 +12,17 @@ import os
 
 
 def _path(opt):
-    # Build the data if it doesn't exist.
-    build(opt)
-    return os.path.join(opt['datapath'], 'probing', 'multi_woz2', 'multi_woz2.txt')
+  # Build the data if it doesn't exist.
+  build(opt)
+  return os.path.join(
+      opt['datapath'],
+      'probing',
+      'dsct8_single',
+      'dsct8_single.txt')
 
 
 class DefaultTeacher(ParlAIDialogTeacher):
-    def __init__(self, opt, shared=None):
-        opt = copy.deepcopy(opt)
-        opt['parlaidialogteacher_datafile'] = _path(opt)
-        super().__init__(opt, shared)
+  def __init__(self, opt, shared=None):
+    opt = copy.deepcopy(opt)
+    opt['parlaidialogteacher_datafile'] = _path(opt)
+    super().__init__(opt, shared)
