@@ -691,6 +691,7 @@ class TorchGeneratorAgent(TorchAgent):
         # Get outputs to probe.
         encoder_states = model.encoder(*self._model_input(batch))
 
+        bsz = len(batch.text_lengths)
         text_lengths = torch.tensor(batch.text_lengths).float().unsqueeze(1)
         if self.use_cuda:
             text_lengths = text_lengths.cuda()
@@ -703,7 +704,6 @@ class TorchGeneratorAgent(TorchAgent):
                 #          [batch size, num layers, hidden dim]) ~ (h, c)
                 # mask: [batch size, max seq len]
                 enc_outputs, hidden, mask = encoder_states
-                bsz = len(batch.text_lengths)
                 attention = (model.attn_type != 'none')
                 if attention:
                     # Average encoder outputs h_t.
@@ -752,13 +752,33 @@ class TorchGeneratorAgent(TorchAgent):
                 # masked: [batch size, max seq len, embedding size]
                 masked = enc_outputs * mask.float().unsqueeze(2)
 
-                # utterance_embeddings: [batch size, embedding size]
-                # utterance_embeddings = masked.sum(dim=1) / text_lengths
-                avg_embeddings = masked.sum(dim=1) / text_lengths
-                min_embeddings = masked.min(dim=1).values
-                max_embeddings = masked.max(dim=1).values
-                utterance_embeddings = torch.cat((avg_embeddings, min_embeddings, max_embeddings), dim=1)
-                utterance_embeddings = utterance_embeddings.cpu().numpy()
+                if self.opt['save_all_transformer_embs']:
+                    if len(self.probing_outputs) == 0:
+                        # First batch, masked is embeddings matrix
+                        utterance_embeddings = masked.cpu().numpy()
+                    else:
+                        current_max_len = self.probing_outputs.shape[1]
+                        batch_max_len = masked.shape[1]
+                        embedding_size = masked.shape[2]
+                        if current_max_len > batch_max_len:
+                            # Expand utterance embeddings to fit with probing outputs
+                            utterance_embeddings = np.zeros((bsz, current_max_len, embedding_size))
+                            utterance_embeddings[:, :batch_max_len, :] = masked.cpu().numpy()
+                        elif current_max_len < batch_max_len:
+                            # Expand probing outputs to fit with utterance embeddings
+                            probing_outputs_size = self.probing_outputs.shape[0]
+                            _probing_outputs = np.zeros((probing_outputs_size, batch_max_len, embedding_size))
+                            _probing_outputs[:, :current_max_len, :] = self.probing_outputs
+                            self.probing_outputs = _probing_outputs
+                            utterance_embeddings = masked.cpu().numpy()
+                else:
+                    # utterance_embeddings: [batch size, embedding size]
+                    # utterance_embeddings = masked.sum(dim=1) / text_lengths
+                    avg_embeddings = masked.sum(dim=1) / text_lengths
+                    min_embeddings = masked.min(dim=1).values
+                    max_embeddings = masked.max(dim=1).values
+                    utterance_embeddings = torch.cat((avg_embeddings, min_embeddings, max_embeddings), dim=1)
+                    utterance_embeddings = utterance_embeddings.cpu().numpy()
 
             else:
                 raise NotImplementedError(f'{model_name} not supported')
