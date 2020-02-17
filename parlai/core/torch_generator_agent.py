@@ -752,7 +752,7 @@ class TorchGeneratorAgent(TorchAgent):
                 enc_outputs, hidden, mask = encoder_states
                 bsz = len(batch.text_lengths)
                 attention = (model.attn_type != 'none')
-                if attention:
+                if attention or True:
                     # Average encoder outputs h_t.
                     # masked: [batch size, max seq len, hidden dim * 2]
                     masked = enc_outputs * mask.float().unsqueeze(2)
