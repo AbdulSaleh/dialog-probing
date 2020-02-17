@@ -1748,8 +1748,7 @@ class TorchAgent(ABC, Agent):
 
         if self.is_training:
             output = self.train_step(batch)
-        # elif self.is_probing:
-        #     output = self.probe_step(batch)
+
         else:
             with torch.no_grad():
                 # save memory and compute by disabling autograd.

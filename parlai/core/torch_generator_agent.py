@@ -613,53 +613,6 @@ class TorchGeneratorAgent(TorchAgent):
         text = [self._v2t(p) for p in preds] if preds is not None else None
         return Output(text, cand_choices)
 
-    def probe_step(self, batch):
-        """Evaluate a single batch of examples."""
-        if batch.text_vec is None:
-            return
-        bsz = batch.text_vec.size(0)
-        self.model.eval()
-        cand_scores = None
-
-        if batch.label_vec is not None:
-            # calculate loss on targets with teacher forcing
-            loss = self.compute_loss(batch)  # noqa: F841  we need the side effects
-            self.metrics['loss'] += loss.item()
-
-        preds = None
-
-        maxlen = self.label_truncate or 256
-        beam_preds_scores, _ = self._generate(batch, self.beam_size, maxlen)
-        preds, scores = zip(*beam_preds_scores)
-
-        cand_choices = None
-        # TODO: abstract out the scoring here
-        if self.rank_candidates:
-            # compute roughly ppl to rank candidates
-            cand_choices = []
-            encoder_states = self.model.encoder(*self._model_input(batch))
-            for i in range(bsz):
-                num_cands = len(batch.candidate_vecs[i])
-                enc = self.model.reorder_encoder_states(encoder_states, [i] * num_cands)
-                cands, _ = padded_tensor(
-                    batch.candidate_vecs[i], self.NULL_IDX, self.use_cuda
-                )
-                scores, _ = self.model.decode_forced(enc, cands)
-                cand_losses = F.cross_entropy(
-                    scores.view(num_cands * cands.size(1), -1),
-                    cands.view(-1),
-                    reduction='none',
-                ).view(num_cands, cands.size(1))
-                # now cand_losses is cands x seqlen size, but we still need to
-                # check padding and such
-                mask = (cands != self.NULL_IDX).float()
-                cand_scores = (cand_losses * mask).sum(dim=1) / (mask.sum(dim=1) + 1e-9)
-                _, ordering = cand_scores.sort()
-                cand_choices.append([batch.candidates[i][o] for o in ordering])
-
-        text = [self._v2t(p) for p in preds] if preds is not None else None
-        return Output(text, cand_choices)
-
 
     def _treesearch_factory(self, device):
         method = self.opt.get('inference', 'greedy')
@@ -752,7 +705,7 @@ class TorchGeneratorAgent(TorchAgent):
                 enc_outputs, hidden, mask = encoder_states
                 bsz = len(batch.text_lengths)
                 attention = (model.attn_type != 'none')
-                if attention or True:
+                if attention:
                     # Average encoder outputs h_t.
                     # masked: [batch size, max seq len, hidden dim * 2]
                     masked = enc_outputs * mask.float().unsqueeze(2)
