@@ -753,7 +753,11 @@ class TorchGeneratorAgent(TorchAgent):
                 masked = enc_outputs * mask.float().unsqueeze(2)
 
                 # utterance_embeddings: [batch size, embedding size]
-                utterance_embeddings = masked.sum(dim=1) / text_lengths
+                # utterance_embeddings = masked.sum(dim=1) / text_lengths
+                avg_embeddings = masked.sum(dim=1) / text_lengths
+                min_embeddings = masked.min(dim=1).values
+                max_embeddings = masked.max(dim=1).values
+                utterance_embeddings = torch.cat((avg_embeddings, min_embeddings, max_embeddings), dim=1)
                 utterance_embeddings = utterance_embeddings.cpu().numpy()
 
             else:
