@@ -117,7 +117,7 @@ if __name__ == '__main__':
             module=SingleHeadAttention,
             module__input_dim=input_dim,
             module__output_dim=output_dim,
-            # module__hidden_dim=opt['hidden_layer_dim'],
+            module__head_dim=opt['hidden_layer_dim'],
             module__dropout=opt['dropout'],
             device='cuda',
             # Training
