@@ -1749,11 +1749,16 @@ class TorchAgent(ABC, Agent):
         if self.is_training:
             output = self.train_step(batch)
 
+        elif self.opt.get('probe', False):
+            with torch.no_grad():
+                # Very similar to eval_step
+                # Avoids unnecessary computation
+                output = self.probe_step(batch)
+
         else:
             with torch.no_grad():
                 # save memory and compute by disabling autograd.
                 # use `with torch.enable_grad()` to gain back graidients.
-                # ABDUL: Could introduce probing here
                 output = self.eval_step(batch)
 
         if output is None:

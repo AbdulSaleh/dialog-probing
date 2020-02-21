@@ -1262,13 +1262,23 @@ class ParlAIDialogTeacher(FixedDialogTeacher):
                     # Start new episode
                     # episode_done: True since probing sees all episode at once
                     eps = [{'text': turn[len('text:'):],
-                            'labels': [' '],
+                            'labels': [None],
                             'episode_done':True}]
-                else:
-                    # Continue previous episode
-                    eps[0]['text'] = eps[0]['text'] + '\n' + turn
+
+                if not (turn.startswith('text:') or
+                        'episode_done:True' in line):
+                    # Continue interaction
+                    eps[0]['text'] = eps[0]['text'] + ' __end__ ' + turn
 
                 if 'episode_done:True' in line:
+                    if self.opt.get('decoder', False):
+                        # Probing decoder, add last turn to labels
+                        turn = '' if turn.startswith('text:') else turn
+                        eps[0]['labels'] = [turn]
+                    else:
+                        # Probing encoder, add last turn to text
+                        turn = '' if turn.startswith('text:') else ' __end__ ' + turn
+                        eps[0]['text'] = eps[0]['text'] + turn
                     self.episodes.append(eps)
 
         else:

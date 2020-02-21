@@ -65,7 +65,7 @@ class TorchGeneratorModel(nn.Module, ABC):
         self.register_buffer('START', torch.LongTensor([start_idx]))
         self.longest_label = longest_label
 
-    def decode_forced(self, encoder_states, ys):
+    def decode_forced(self, encoder_states, ys, decoder_outputs=False):
         """
         Decode with a fixed, true sequence, computing loss.
 
@@ -96,7 +96,11 @@ class TorchGeneratorModel(nn.Module, ABC):
         latent, _ = self.decoder(inputs, encoder_states)
         logits = self.output(latent)
         _, preds = logits.max(dim=2)
-        return logits, preds
+        if decoder_outputs:
+            # ONLY for probing
+            return latent
+        else:
+            return logits, preds
 
     @abstractmethod
     def reorder_encoder_states(self, encoder_states, indices):
@@ -180,7 +184,7 @@ class TorchGeneratorModel(nn.Module, ABC):
         """
         pass
 
-    def forward(self, *xs, ys=None, prev_enc=None, maxlen=None, bsz=None):
+    def forward(self, *xs, ys=None, prev_enc=None, maxlen=None, bsz=None, decoder_outputs=False):
         """
         Get output predictions from the model.
 
@@ -223,10 +227,16 @@ class TorchGeneratorModel(nn.Module, ABC):
         # use cached encoding if available
         encoder_states = prev_enc if prev_enc is not None else self.encoder(*xs)
 
-        # use teacher forcing
-        scores, preds = self.decode_forced(encoder_states, ys)
+        if decoder_outputs:
+            # ONLY for probing
+            decoder_outs = self.decode_forced(encoder_states, ys, decoder_outputs=True)
+            return decoder_outs
+        else:
+            # For training and evaluation
+            # use teacher forcing
+            scores, preds = self.decode_forced(encoder_states, ys)
 
-        return scores, preds, encoder_states
+            return scores, preds, encoder_states
 
 
 class TorchGeneratorAgent(TorchAgent):
@@ -613,6 +623,27 @@ class TorchGeneratorAgent(TorchAgent):
         text = [self._v2t(p) for p in preds] if preds is not None else None
         return Output(text, cand_choices)
 
+    def probe_step(self, batch):
+        """Probe a single batch of examples."""
+        if batch.text_vec is None:
+            return
+        bsz = batch.text_vec.size(0)
+        self.model.eval()
+        cand_scores = None
+
+        if self.opt.get('decoder', False):
+            # Probe decoder embeddings
+            # Limit to transformers for now
+            if type(self.model).__name__ != 'TransformerGeneratorModel':
+                raise NotImplementedError('Only Transformer decoder probing supported for now')
+            self._probe_decoder(batch)
+        else:
+            self._probe_encoder(batch)
+
+        preds = None
+        cand_choices = None
+        text = None
+        return Output(text, cand_choices)
 
     def _treesearch_factory(self, device):
         method = self.opt.get('inference', 'greedy')
@@ -663,6 +694,88 @@ class TorchGeneratorAgent(TorchAgent):
             raise ValueError(f"Can't use inference method {method}")
 
     def _generate(self, batch, beam_size, max_ts):
+        """
+        Generate an output with beam search.
+
+        Depending on the options, this may perform greedy/topk/nucleus generation.
+
+        :param Batch batch:
+            Batch structure with input and labels
+        :param int beam_size:
+            Size of each beam during the search
+        :param int max_ts:
+            the maximum length of the decoded sequence
+
+        :return:
+            tuple (beam_pred_scores, n_best_pred_scores, beams)
+
+            - beam_preds_scores: list of (prediction, score) pairs for each sample in
+              Batch
+            - n_best_preds_scores: list of n_best list of tuples (prediction, score)
+              for each sample from Batch
+            - beams :list of Beam instances defined in Beam class, can be used for any
+              following postprocessing, e.g. dot logging.
+        """
+        model = self.model
+        if isinstance(model, torch.nn.parallel.DistributedDataParallel):
+            model = self.model.module
+        # Get outputs to probe.
+        encoder_states = model.encoder(*self._model_input(batch))
+
+        text_lengths = torch.tensor(batch.text_lengths).float().unsqueeze(1)
+        if self.use_cuda:
+            text_lengths = text_lengths.cuda()
+
+        dev = batch.text_vec.device
+
+        bsz = len(batch.text_lengths)
+        beams = [self._treesearch_factory(dev) for _ in range(bsz)]
+
+        # repeat encoder outputs and decoder inputs
+        decoder_input = (
+            torch.LongTensor([self.START_IDX]).expand(bsz * beam_size, 1).to(dev)
+        )
+
+        inds = torch.arange(bsz).to(dev).unsqueeze(1).repeat(1, beam_size).view(-1)
+        encoder_states = model.reorder_encoder_states(encoder_states, inds)
+        incr_state = None
+
+        for _ts in range(max_ts):
+            if all((b.is_done() for b in beams)):
+                # exit early if possible
+                break
+
+            score, incr_state = model.decoder(decoder_input, encoder_states, incr_state)
+            # only need the final hidden state to make the word prediction
+            score = score[:, -1:, :]
+            score = model.output(score)
+            # score contains softmax scores for bsz * beam_size samples
+            score = score.view(bsz, beam_size, -1)
+            score = F.log_softmax(score, dim=-1)
+            for i, b in enumerate(beams):
+                if not b.is_done():
+                    b.advance(score[i])
+            incr_state_inds = torch.cat(
+                [
+                    beam_size * i + b.get_backtrack_from_current_step()
+                    for i, b in enumerate(beams)
+                ]
+            )
+            incr_state = model.reorder_decoder_incremental_state(
+                incr_state, incr_state_inds
+            )
+            decoder_input = torch.index_select(decoder_input, 0, incr_state_inds)
+            selection = torch.cat(
+                [b.get_output_from_current_step() for b in beams]
+            ).unsqueeze(-1)
+            decoder_input = torch.cat([decoder_input, selection], dim=-1)
+
+        # get the top prediction for each
+        beam_preds_scores = [b.get_top_hyp() for b in beams]
+
+        return beam_preds_scores, beams
+
+    def _probe_encoder(self, batch):
         """
         Generate an output with beam search.
 
@@ -769,54 +882,46 @@ class TorchGeneratorAgent(TorchAgent):
                 # In case probing_outputs empty array
                 self.probing_outputs = utterance_embeddings
 
-        dev = batch.text_vec.device
+        return None
 
-        bsz = len(batch.text_lengths)
-        beams = [self._treesearch_factory(dev) for _ in range(bsz)]
+    def _probe_decoder(self, batch):
+        """
+        Compute and return the loss for the given batch.
 
-        # repeat encoder outputs and decoder inputs
-        decoder_input = (
-            torch.LongTensor([self.START_IDX]).expand(bsz * beam_size, 1).to(dev)
-        )
+        Easily overridable for customized loss functions.
 
-        inds = torch.arange(bsz).to(dev).unsqueeze(1).repeat(1, beam_size).view(-1)
-        encoder_states = model.reorder_encoder_states(encoder_states, inds)
-        incr_state = None
+        If return_output is True, the full output from the call to self.model()
+        is also returned, via a (loss, model_output) pair.
+        """
+        if batch.label_vec is None:
+            raise ValueError('Cannot compute loss without a label.')
+        model_output = self.model(*self._model_input(batch), ys=batch.label_vec, decoder_outputs=True)
+        # latent: [batch size, max seq len, embedding size]
+        latent = model_output
 
-        for _ts in range(max_ts):
-            if all((b.is_done() for b in beams)):
-                # exit early if possible
-                break
+        # Mask output
+        bsz = batch.label_vec.size(0)
+        label_lens = torch.tensor(batch.label_lengths).cuda()
+        longest_label = max(label_lens)
+        empty_mask = torch.arange(longest_label).expand(bsz, longest_label).cuda()
+        mask = empty_mask < (label_lens + 1).unsqueeze(1)   # +1 for start index
+        # masked: [batch size, max seq len, embedding size]
+        masked = latent * mask.float().unsqueeze(2)
 
-            score, incr_state = model.decoder(decoder_input, encoder_states, incr_state)
-            # only need the final hidden state to make the word prediction
-            score = score[:, -1:, :]
-            score = model.output(score)
-            # score contains softmax scores for bsz * beam_size samples
-            score = score.view(bsz, beam_size, -1)
-            score = F.log_softmax(score, dim=-1)
-            for i, b in enumerate(beams):
-                if not b.is_done():
-                    b.advance(score[i])
-            incr_state_inds = torch.cat(
-                [
-                    beam_size * i + b.get_backtrack_from_current_step()
-                    for i, b in enumerate(beams)
-                ]
-            )
-            incr_state = model.reorder_decoder_incremental_state(
-                incr_state, incr_state_inds
-            )
-            decoder_input = torch.index_select(decoder_input, 0, incr_state_inds)
-            selection = torch.cat(
-                [b.get_output_from_current_step() for b in beams]
-            ).unsqueeze(-1)
-            decoder_input = torch.cat([decoder_input, selection], dim=-1)
+        # utterance_embeddings: [batch size, embedding size]
+        avg_embeddings = masked.sum(dim=1) / label_lens.float().unsqueeze(1)
+        min_embeddings = masked.min(dim=1).values
+        max_embeddings = masked.max(dim=1).values
+        utterance_embeddings = torch.cat((avg_embeddings, min_embeddings, max_embeddings), dim=1)
+        utterance_embeddings = utterance_embeddings.cpu().numpy()
 
-        # get the top prediction for each
-        beam_preds_scores = [b.get_top_hyp() for b in beams]
+        # Store probing outputs
+        try:
+            self.probing_outputs = np.vstack((self.probing_outputs, utterance_embeddings))
+        except:
+            # In case probing_outputs empty array
+            self.probing_outputs = utterance_embeddings
 
-        return beam_preds_scores, beams
 
 
 class _HypothesisTail(object):
