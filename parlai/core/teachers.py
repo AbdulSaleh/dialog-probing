@@ -1271,7 +1271,7 @@ class ParlAIDialogTeacher(FixedDialogTeacher):
                     eps[0]['text'] = eps[0]['text'] + ' __end__ ' + turn
 
                 if 'episode_done:True' in line:
-                    if self.opt.get('decoder', False):
+                    if self.opt.get('probe_decoder', False):
                         # Probing decoder, add last turn to labels
                         turn = '' if turn.startswith('text:') else turn
                         eps[0]['labels'] = [turn]

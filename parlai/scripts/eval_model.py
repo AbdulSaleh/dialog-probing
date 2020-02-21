@@ -38,7 +38,7 @@ def setup_args(parser=None):
 
     # Probing command line arguments
     parser.add_argument('--probe', action='store_true')
-    parser.add_argument('-dec', '--decoder', action='store_true')
+    parser.add_argument('-dec', '--probe-decoder', action='store_true')
 
     # Other command line arguments
     parser.add_argument('-ne', '--num-examples', type=int, default=-1)

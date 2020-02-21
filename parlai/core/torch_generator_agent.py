@@ -631,7 +631,7 @@ class TorchGeneratorAgent(TorchAgent):
         self.model.eval()
         cand_scores = None
 
-        if self.opt.get('decoder', False):
+        if self.opt.get('probe_decoder', False):
             # Probe decoder embeddings
             # Limit to transformers for now
             if type(self.model).__name__ != 'TransformerGeneratorModel':
