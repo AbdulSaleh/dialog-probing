@@ -38,7 +38,6 @@ def setup_args(parser=None):
 
     # Probing command line arguments
     parser.add_argument('--probe', type=bool, default=False)
-    parser.add_argument('--save-all-transformer-embs', type=bool, default=False)
 
     # Other command line arguments
     parser.add_argument('-ne', '--num-examples', type=int, default=-1)
