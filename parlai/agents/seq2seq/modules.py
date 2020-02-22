@@ -243,6 +243,7 @@ class RNNEncoder(nn.Module):
         self.layers = numlayers
         self.dirs = 2 if bidirectional else 1
         self.hsz = hiddensize
+        self.padding_idx = 0
 
         if input_dropout > 0 and unknown_idx is None:
             raise RuntimeError('input_dropout > 0 but unknown_idx not set')
