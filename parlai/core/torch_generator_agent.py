@@ -887,16 +887,8 @@ class TorchGeneratorAgent(TorchAgent):
         return None
 
     def _probe_decoder(self, batch):
-        """
-        Compute and return the loss for the given batch.
-
-        Easily overridable for customized loss functions.
-
-        If return_output is True, the full output from the call to self.model()
-        is also returned, via a (loss, model_output) pair.
-        """
         if batch.label_vec is None:
-            raise ValueError('Cannot compute loss without a label.')
+            raise ValueError('Cannot compute probe decoder without a label.')
         model_output = self.model(*self._model_input(batch), ys=batch.label_vec, decoder_outputs=True)
         # latent: [batch size, max seq len, embedding size]
         latent = model_output
@@ -963,6 +955,7 @@ class TorchGeneratorAgent(TorchAgent):
         except:
             # In case probing_outputs empty array
             self.probing_outputs = utterance_embeddings
+
 
 class _HypothesisTail(object):
     """Hold some bookkeeping about a hypothesis."""

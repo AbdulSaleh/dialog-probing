@@ -194,7 +194,8 @@ def process_task(task_name, save_dir, glove):
         data_dir = Path(project_dir, 'data', 'probing', 'multi_woz')
         data = open(data_dir.joinpath('multi_woz.txt'))
 
-        examples = []
+        history = []
+        current = []
         for line in data:
             line = line.rstrip('\n')
             turn = line.split('\t')[0]
@@ -205,9 +206,12 @@ def process_task(task_name, save_dir, glove):
             episode.append(turn)
 
             if 'episode_done:True' in line:
-                examples.append(' '.join(episode))
+                history.append(' '.join(episode))
+                current.append(turn)
 
-        embeddings = encode_glove(examples, glove, dict=dict)
+        history = encode_glove(history, glove, dict=dict)
+        current = encode_glove(current, glove, dict=dict)
+        embeddings = np.hstack((history, current))
 
     elif task_name == 'squad':
         data_dir = Path(project_dir, 'data', 'probing', 'squad')

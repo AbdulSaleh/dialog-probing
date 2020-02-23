@@ -142,7 +142,7 @@ def _eval_single_world(opt, agent, task):
         if world.opt.get('probe_decoder', False):
             open(task_dir.joinpath('decoder.txt'), 'w')
         elif world.opt.get('probe_embeddings', False):
-            open(task_dir.joinpath('decoder.txt'), 'w')
+            open(task_dir.joinpath('embeddings.txt'), 'w')
         else:
             open(task_dir.joinpath('encoder.txt'), 'w')
 
