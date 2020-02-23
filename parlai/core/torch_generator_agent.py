@@ -637,7 +637,7 @@ class TorchGeneratorAgent(TorchAgent):
             embeddings = self._probe_encoder(batch)
         elif self.opt['probe'] == 'decoder':
             embeddings = self._probe_decoder(batch)
-        elif self.optn['probe'] == 'embeddings':
+        elif self.opt['probe'] == 'embeddings':
             embeddings = self._probe_embeddings(batch)
         else:
             raise Exception(f"Input type {self.opt['probe']} not understood.")
