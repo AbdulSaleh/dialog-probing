@@ -634,8 +634,8 @@ class TorchGeneratorAgent(TorchAgent):
         if self.opt.get('probe_decoder', False):
             # Probe decoder embeddings
             # Limit to transformers for now
-            if type(self.model).__name__ != 'TransformerGeneratorModel':
-                raise NotImplementedError('Only Transformer decoder probing supported for now')
+            # if type(self.model).__name__ != 'TransformerGeneratorModel':
+            #     raise NotImplementedError('Only Transformer decoder probing supported for now')
             self._probe_decoder(batch)
         elif self.opt.get('probe_embeddings', False):
             self._probe_embeddings(batch)
@@ -902,12 +902,20 @@ class TorchGeneratorAgent(TorchAgent):
         # masked: [batch size, max seq len, embedding size]
         masked = latent * mask.float().unsqueeze(2)
 
+
         # utterance_embeddings: [batch size, embedding size]
         avg_embeddings = masked.sum(dim=1) / label_lens.float().unsqueeze(1)
         min_embeddings = masked.min(dim=1).values
         max_embeddings = masked.max(dim=1).values
         utterance_embeddings = torch.cat((avg_embeddings, min_embeddings, max_embeddings), dim=1)
         utterance_embeddings = utterance_embeddings.cpu().numpy()
+
+        if type(self.model).__name__ != 'TransformerGeneratorModel':
+            # Sort embeddings into original order. Undo pack padded sequence
+            _utterance_embeddings = np.zeros_like(utterance_embeddings)
+            for i, j in enumerate(batch['valid_indices']):
+                _utterance_embeddings[j] = utterance_embeddings[i]
+            utterance_embeddings = _utterance_embeddings
 
         # Store probing outputs
         try:
