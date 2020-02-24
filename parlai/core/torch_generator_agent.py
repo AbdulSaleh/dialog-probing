@@ -787,9 +787,13 @@ class TorchGeneratorAgent(TorchAgent):
         decoder_word_embeddings = self._probe_decoder_embeddings(batch)
         # encoder_embeddings = self._probe_encoder(batch)
         # decoder_embeddings = self._probe_decoder(batch)
+        #
+        # utterance_embeddings = np.hstack((encoder_word_embeddings, encoder_embeddings,
+        #                                   decoder_word_embeddings, decoder_embeddings))
 
-        utterance_embeddings = np.hstack((encoder_word_embeddings, encoder_embeddings,
-                                          decoder_word_embeddings, decoder_embeddings))
+        utterance_embeddings = np.hstack((encoder_word_embeddings,
+                                          decoder_word_embeddings))
+
 
         return utterance_embeddings
 
