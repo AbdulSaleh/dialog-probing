@@ -27,15 +27,15 @@ do
 
         if [[ $dir == *'large'* ]] || [[ $dir == *'finetuned'* ]]
         then
-            BATCH=1400
-        else
             BATCH=700
+        else
+            BATCH=1400
         fi
 
         mf="trained/${DATASET}/${dir}/${m}"
         command="CUDA_VISIBLE_DEVICES=${CUDA} python examples/eval_model.py -t ${TASK} -mf ${mf} --batchsize ${BATCH} --probe ${PROBE}"
-        echo $command
-        #eval "$command"
+#        echo $command
+        eval "$command"
     fi
     done
 done
