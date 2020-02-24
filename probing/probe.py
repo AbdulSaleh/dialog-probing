@@ -33,11 +33,12 @@ def setup_args():
                         help='Number of times to train MLP with new random inits each time.\n'
                              'Required for creating confidence intervals')
 
-    parser.add_argument('-ep', '--max_epochs', type=int, default=200)
+    parser.add_argument('-ep', '--max_epochs', type=int, default=100)
     parser.add_argument('-bs', '--batch_size', type=int, default=128)
 
     parser.add_argument('-hidden', '--hidden_layer_dim', type=int, default=128)
     parser.add_argument('-lr', '--learning_rate', type=float, default=0.001)
+    parser.add_argument('-drop', '--dropout', type=float, default=0.5)
 
     return vars(parser.parse_args())
 
@@ -116,7 +117,7 @@ if __name__ == '__main__':
             module__input_dim=input_dim,
             module__output_dim=output_dim,
             module__hidden_dim=opt['hidden_layer_dim'],
-            module__dropout=0.5,
+            module__dropout=opt['dropout'],
             device='cuda',
             # Training
             max_epochs=opt['max_epochs'],

@@ -37,8 +37,8 @@ def setup_args(parser=None):
     # Get command line arguments
 
     # Probing command line arguments
-    parser.add_argument('--probe', type=bool, default=False)
-    parser.add_argument('--average_utterance', type=bool, default=False)
+    parser.add_argument('--probe', type=str, default=None,
+                        choices=['all', 'encoder', 'decoder', 'embeddings'])
 
     # Other command line arguments
     parser.add_argument('-ne', '--num-examples', type=int, default=-1)
@@ -137,6 +137,15 @@ def _eval_single_world(opt, agent, task):
             pickle.dump(world.world.agents[1].probing_outputs, open(save_path, 'wb'))
         except:
             pickle.dump(world.world.agents[1].probing_outputs, open(save_path, 'wb'), protocol=4)
+
+        if world.opt['probe'] == 'all':
+            open(task_dir.joinpath('all.txt'), 'w')
+        elif world.opt['probe'] == 'encoder':
+            open(task_dir.joinpath('encoder.txt'), 'w')
+        elif world.opt['probe'] == 'decoder':
+            open(task_dir.joinpath('decoder.txt'), 'w')
+        elif world.opt['probe'] == 'embeddings':
+            open(task_dir.joinpath('embeddings'), 'w')
 
     report = world.report()
     world.reset()

@@ -65,7 +65,7 @@ class TorchGeneratorModel(nn.Module, ABC):
         self.register_buffer('START', torch.LongTensor([start_idx]))
         self.longest_label = longest_label
 
-    def decode_forced(self, encoder_states, ys):
+    def decode_forced(self, encoder_states, ys, decoder_outputs=False):
         """
         Decode with a fixed, true sequence, computing loss.
 
@@ -96,7 +96,11 @@ class TorchGeneratorModel(nn.Module, ABC):
         latent, _ = self.decoder(inputs, encoder_states)
         logits = self.output(latent)
         _, preds = logits.max(dim=2)
-        return logits, preds
+        if decoder_outputs:
+            # ONLY for probing
+            return latent
+        else:
+            return logits, preds
 
     @abstractmethod
     def reorder_encoder_states(self, encoder_states, indices):
@@ -180,7 +184,7 @@ class TorchGeneratorModel(nn.Module, ABC):
         """
         pass
 
-    def forward(self, *xs, ys=None, prev_enc=None, maxlen=None, bsz=None):
+    def forward(self, *xs, ys=None, prev_enc=None, maxlen=None, bsz=None, decoder_outputs=False):
         """
         Get output predictions from the model.
 
@@ -223,10 +227,16 @@ class TorchGeneratorModel(nn.Module, ABC):
         # use cached encoding if available
         encoder_states = prev_enc if prev_enc is not None else self.encoder(*xs)
 
-        # use teacher forcing
-        scores, preds = self.decode_forced(encoder_states, ys)
+        if decoder_outputs:
+            # ONLY for probing
+            decoder_outs = self.decode_forced(encoder_states, ys, decoder_outputs=True)
+            return decoder_outs
+        else:
+            # For training and evaluation
+            # use teacher forcing
+            scores, preds = self.decode_forced(encoder_states, ys)
 
-        return scores, preds, encoder_states
+            return scores, preds, encoder_states
 
 
 class TorchGeneratorAgent(TorchAgent):
@@ -614,69 +624,33 @@ class TorchGeneratorAgent(TorchAgent):
         return Output(text, cand_choices)
 
     def probe_step(self, batch):
-        """Evaluate a single batch of examples."""
+        """Probe a single batch of examples."""
         if batch.text_vec is None:
             return
         bsz = batch.text_vec.size(0)
         self.model.eval()
         cand_scores = None
 
-        if batch.label_vec is not None:
-            # calculate loss on targets with teacher forcing
-            loss = self.compute_loss(batch)  # noqa: F841  we need the side effects
-            self.metrics['loss'] += loss.item()
+        if self.opt['probe'] == 'all':
+            embeddings = self._probe_all(batch)
+        elif self.opt['probe'] == 'encoder':
+            embeddings = self._probe_encoder(batch)
+        elif self.opt['probe'] == 'decoder':
+            embeddings = self._probe_decoder(batch)
+        elif self.opt['probe'] == 'embeddings':
+            embeddings = self._probe_embeddings(batch)
+        else:
+            raise Exception(f"Input type {self.opt['probe']} not understood.")
 
-        preds = None
-
-        maxlen = self.label_truncate or 256
-        beam_preds_scores, _ = self._generate(batch, self.beam_size, maxlen)
-        preds, scores = zip(*beam_preds_scores)
+        try:
+            self.probing_outputs = np.vstack((self.probing_outputs, embeddings))
+        except:
+            # In case probing_outputs empty array
+            self.probing_outputs = embeddings
 
         cand_choices = None
-        # TODO: abstract out the scoring here
-        if self.rank_candidates:
-            # compute roughly ppl to rank candidates
-            cand_choices = []
-            encoder_states = self.model.encoder(*self._model_input(batch))
-            for i in range(bsz):
-                num_cands = len(batch.candidate_vecs[i])
-                enc = self.model.reorder_encoder_states(encoder_states, [i] * num_cands)
-                cands, _ = padded_tensor(
-                    batch.candidate_vecs[i], self.NULL_IDX, self.use_cuda
-                )
-                scores, _ = self.model.decode_forced(enc, cands)
-                cand_losses = F.cross_entropy(
-                    scores.view(num_cands * cands.size(1), -1),
-                    cands.view(-1),
-                    reduction='none',
-                ).view(num_cands, cands.size(1))
-                # now cand_losses is cands x seqlen size, but we still need to
-                # check padding and such
-                mask = (cands != self.NULL_IDX).float()
-                cand_scores = (cand_losses * mask).sum(dim=1) / (mask.sum(dim=1) + 1e-9)
-                _, ordering = cand_scores.sort()
-                cand_choices.append([batch.candidates[i][o] for o in ordering])
-
-        text = [self._v2t(p) for p in preds] if preds is not None else None
+        text = None
         return Output(text, cand_choices)
-
-
-
-    # def probe_step(self, batch):
-    #     """Evaluate a single batch of examples."""
-    #     if batch.text_vec is None:
-    #         return
-    #     bsz = batch.text_vec.size(0)
-    #     # eval mode ok for probing since we probe behavior in inference mode
-    #     self.model.eval()
-    #     cand_scores = None
-    #
-    #     maxlen = self.label_truncate or 256
-    #     probing_vectors = self._probe(batch, maxlen)
-    #
-    #     return probing_vectors
-    #     # return Output(text, cand_choices)
-
 
     def _treesearch_factory(self, device):
         method = self.opt.get('inference', 'greedy')
@@ -759,73 +733,6 @@ class TorchGeneratorAgent(TorchAgent):
         if self.use_cuda:
             text_lengths = text_lengths.cuda()
 
-        if self.opt.get('probe', False):
-            model_name = type(model).__name__
-            if model_name == 'Seq2seq':
-                # enc_outputs: [batch size, max seq len, hidden dim * 2] ~ since bidirectional
-                # hidden: ([batch size, num layers, hidden dim],
-                #          [batch size, num layers, hidden dim]) ~ (h, c)
-                # mask: [batch size, max seq len]
-                enc_outputs, hidden, mask = encoder_states
-                attention = (model.attn_type != 'none')
-                if attention or self.opt['average_utterance']:
-                    # Average encoder outputs.
-                    # masked: [batch size, max seq len, hidden dim * 2]
-                    masked = enc_outputs * mask.float().unsqueeze(2)
-
-                    # _utterance_embeddings: [batch size, hidden dim * num layers * 2]
-                    _utterance_embeddings = masked.sum(dim=1) / text_lengths
-
-                    utterance_embeddings = torch.zeros_like(_utterance_embeddings).cuda()
-
-                    # Sort embeddings into original order. Undo pack padded sequence
-                    for i, j in enumerate(batch['valid_indices']):
-                        utterance_embeddings[j] = _utterance_embeddings[i]
-
-                    utterance_embeddings = utterance_embeddings.cpu().numpy()
-
-                else:
-                    # Use final hidden states (h, c)
-                    # hidden: ([batch size, hidden dim * num layers],
-                    #          [batch size, hidden dim * num layers])
-                    bsz = hidden[0].shape[0]
-                    hidden = (hidden[0].reshape(bsz, -1),
-                              hidden[1].reshape(bsz, -1))
-
-                    # hidden: [batch size, hidden dim * num layers * 2]
-                    hidden = torch.cat(hidden, dim=1)
-
-                    # utterance_embeddings: [batch size, hidden dim * num layers * 2]
-                    utterance_embeddings = torch.zeros_like(hidden).cuda()
-
-                    # Sort embeddings into original order. Undo pack padded sequence
-                    for i, j in enumerate(batch['valid_indices']):
-                        utterance_embeddings[j] = hidden[i]
-
-                    utterance_embeddings = utterance_embeddings.cpu().numpy()
-
-            elif model_name == 'TransformerGeneratorModel':
-                # enc_outputs: [batch size, max seq len, embedding size]
-                # mask: [batch size, max seq len]
-                enc_outputs, mask = encoder_states
-
-                # masked: [batch size, max seq len, embedding size]
-                masked = enc_outputs * mask.float().unsqueeze(2)
-
-                # utterance_embeddings: [batch size, embedding size]
-                utterance_embeddings = masked.sum(dim=1) / text_lengths
-                utterance_embeddings = utterance_embeddings.cpu().numpy()
-
-            else:
-                raise NotImplementedError(f'{model_name} not supported')
-
-            # Store probing outputs
-            try:
-                self.probing_outputs = np.vstack((self.probing_outputs, utterance_embeddings))
-            except:
-                # In case probing_outputs empty array
-                self.probing_outputs = utterance_embeddings
-
         dev = batch.text_vec.device
 
         bsz = len(batch.text_lengths)
@@ -875,14 +782,152 @@ class TorchGeneratorAgent(TorchAgent):
 
         return beam_preds_scores, beams
 
-    # def _probe(self, batch):
-    # """Modeled after self._generate """
-    #     model = self.model
-    #     if isinstance(model, torch.nn.parallel.DistributedDataParallel):
-    #         model = self.model.module
-    #     encoder_states = model.encoder(*self._model_input(batch))
-    #
+    def _probe_all(self, batch):
+        encoder_embeddings = self._probe_encoder(batch)
+        decoder_embeddings = self._probe_decoder(batch)
 
+        utterance_embeddings = np.hstack((encoder_embeddings, decoder_embeddings))
+
+        return utterance_embeddings
+
+    def _probe_encoder(self, batch):
+        model = self.model
+        # Get outputs to probe.
+        encoder_states = model.encoder(*self._model_input(batch))
+
+        bsz = len(batch.text_lengths)
+        text_lengths = torch.tensor(batch.text_lengths).float().unsqueeze(1).cuda()
+
+        model_name = type(model).__name__
+        if model_name == 'Seq2seq':
+            # enc_outputs: [batch size, max seq len, hidden dim * 2] ~ since bidirectional
+            # hidden: ([batch size, num layers, hidden dim],
+            #          [batch size, num layers, hidden dim]) ~ (h, c)
+            # mask: [batch size, max seq len]
+            enc_outputs, hidden, mask = encoder_states
+            attention = (model.attn_type != 'none')
+            if attention:
+                # Average encoder outputs h_t.
+                # masked: [batch size, max seq len, hidden dim * 2]
+                masked = enc_outputs * mask.float().unsqueeze(2)
+
+                # _utterance_embeddings: [batch size, hidden dim * 2]
+                _utterance_embeddings = masked.sum(dim=1) / text_lengths
+                # Concat final state c
+                # _utterance_embeddings: [batch size, hidden dim * 2 + hidden dim * num layers]
+                c = hidden[1].reshape(bsz, -1)
+                _utterance_embeddings = torch.cat((_utterance_embeddings, c), dim=1)
+
+                utterance_embeddings = torch.zeros_like(_utterance_embeddings).cuda()
+
+                # Sort embeddings into original order. Undo pack padded sequence
+                for i, j in enumerate(batch['valid_indices']):
+                    utterance_embeddings[j] = _utterance_embeddings[i]
+
+                utterance_embeddings = utterance_embeddings.cpu().numpy()
+
+            else:
+                # Use final hidden states (h, c)
+                # hidden: ([batch size, hidden dim * num layers],
+                #          [batch size, hidden dim * num layers])
+                hidden = (hidden[0].reshape(bsz, -1),
+                          hidden[1].reshape(bsz, -1))
+
+                # hidden: [batch size, hidden dim * num layers * 2]
+                hidden = torch.cat(hidden, dim=1)
+
+                # utterance_embeddings: [batch size, hidden dim * num layers * 2]
+                utterance_embeddings = torch.zeros_like(hidden).cuda()
+
+                # Sort embeddings into original order. Undo pack padded sequence
+                for i, j in enumerate(batch['valid_indices']):
+                    utterance_embeddings[j] = hidden[i]
+
+                utterance_embeddings = utterance_embeddings.cpu().numpy()
+
+        elif model_name == 'TransformerGeneratorModel':
+            # enc_outputs: [batch size, max seq len, embedding size]
+            # mask: [batch size, max seq len]
+            enc_outputs, mask = encoder_states
+
+            # masked: [batch size, max seq len, embedding size]
+            masked = enc_outputs * mask.float().unsqueeze(2)
+            # utterance_embeddings: [batch size, embedding size]
+            # utterance_embeddings = masked.sum(dim=1) / text_lengths
+            avg_embeddings = masked.sum(dim=1) / text_lengths
+            min_embeddings = masked.min(dim=1).values
+            max_embeddings = masked.max(dim=1).values
+            utterance_embeddings = torch.cat((avg_embeddings, min_embeddings, max_embeddings), dim=1)
+            utterance_embeddings = utterance_embeddings.cpu().numpy()
+
+        return utterance_embeddings
+
+    def _probe_decoder(self, batch):
+        if batch.label_vec is None:
+            raise ValueError('Cannot compute probe decoder without a label.')
+        model_output = self.model(*self._model_input(batch), ys=batch.label_vec, decoder_outputs=True)
+        # latent: [batch size, max seq len, embedding size]
+        latent = model_output
+
+        # Mask output
+        bsz = batch.label_vec.size(0)
+        label_lens = torch.tensor(batch.label_lengths).cuda()
+        longest_label = max(label_lens)
+        empty_mask = torch.arange(longest_label).expand(bsz, longest_label).cuda()
+        mask = empty_mask < (label_lens + 1).unsqueeze(1)   # +1 for start index
+        # masked: [batch size, max seq len, embedding size]
+        masked = latent * mask.float().unsqueeze(2)
+
+        # utterance_embeddings: [batch size, embedding size]
+        avg_embeddings = masked.sum(dim=1) / label_lens.float().unsqueeze(1)
+        min_embeddings = masked.min(dim=1).values
+        max_embeddings = masked.max(dim=1).values
+        utterance_embeddings = torch.cat((avg_embeddings, min_embeddings, max_embeddings), dim=1)
+        utterance_embeddings = utterance_embeddings.cpu().numpy()
+
+        if type(self.model).__name__ != 'TransformerGeneratorModel':
+            # Sort embeddings into original order. Undo pack padded sequence
+            _utterance_embeddings = np.zeros_like(utterance_embeddings)
+            for i, j in enumerate(batch['valid_indices']):
+                _utterance_embeddings[j] = utterance_embeddings[i]
+            utterance_embeddings = _utterance_embeddings
+
+        return utterance_embeddings
+
+    def _probe_embeddings(self, batch):
+        encoder = self.model.encoder
+        if type(self.model).__name__ != 'TransformerGeneratorModel':
+            emb_outputs = encoder.lt(*self._model_input(batch))
+            mask = batch.text_vec != encoder.padding_idx
+            masked = emb_outputs * mask.float().unsqueeze(2).cuda()
+
+        else:
+            emb_outputs = encoder.embeddings(*self._model_input(batch))
+
+            if encoder.embeddings_scale:
+                emb_outputs = emb_outputs * np.sqrt(encoder.dim)
+            # Apply mask and position embs
+            mask = batch.text_vec != encoder.padding_idx
+            positions = (mask.cumsum(dim=1, dtype=torch.int64) - 1).clamp_(min=0)
+            position_embs = encoder.position_embeddings(positions).expand_as(emb_outputs)
+            emb_outputs = emb_outputs + position_embs
+            masked = emb_outputs * mask.float().unsqueeze(2).cuda()
+
+        text_lengths = torch.tensor(batch.text_lengths).float().unsqueeze(1).cuda()
+        avg_embeddings = masked.sum(dim=1) / text_lengths
+        min_embeddings = masked.min(dim=1).values
+        max_embeddings = masked.max(dim=1).values
+        utterance_embeddings = torch.cat((avg_embeddings, min_embeddings, max_embeddings), dim=1)
+        utterance_embeddings = utterance_embeddings.cpu().numpy()
+
+        if type(self.model).__name__ != 'TransformerGeneratorModel':
+            # Sort embeddings into original order. Undo pack padded sequence
+            _utterance_embeddings = np.zeros_like(utterance_embeddings)
+            for i, j in enumerate(batch['valid_indices']):
+                _utterance_embeddings[j] = utterance_embeddings[i]
+            utterance_embeddings = _utterance_embeddings
+
+        return utterance_embeddings
 
 class _HypothesisTail(object):
     """Hold some bookkeeping about a hypothesis."""

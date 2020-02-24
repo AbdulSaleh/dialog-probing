@@ -49,8 +49,8 @@ def encode_sent(s, glove, dict):
         except KeyError:
             # word not found in glove
             continue
-
-    return emb / len(words)
+    lens = 1 if len(words) == 0 else len(words)
+    return emb / lens
 
 
 def encode_glove(sents, glove, dict=None):
