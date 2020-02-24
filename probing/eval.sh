@@ -26,9 +26,9 @@ do
 
         if [[ $dir == *'large'* ]] || [[ $dir == *'finetuned'* ]]
         then
-            BATCH=1024
+            BATCH=2048
         else
-            BATCH=512
+            BATCH=1024
         fi
 
         mf="trained/${DATASET}/${dir}/${m}"
