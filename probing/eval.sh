@@ -1,8 +1,9 @@
 #!/bin/bash
 
-# Example usage bash probing/eval.sh trecquestion 0
+# Example usage bash probing/eval.sh trecquestion 0 decoder
 TASK_NAME=$1
 CUDA=$2
+PROBE=$3
 
 TASK="parlai.probing_tasks.${TASK_NAME}.agents"
 
@@ -26,13 +27,13 @@ do
 
         if [[ $dir == *'large'* ]] || [[ $dir == *'finetuned'* ]]
         then
-            BATCH=2048
+            BATCH=1400
         else
-            BATCH=1024
+            BATCH=700
         fi
 
         mf="trained/${DATASET}/${dir}/${m}"
-        command="CUDA_VISIBLE_DEVICES=${CUDA} python examples/eval_model.py -t ${TASK} -mf ${mf} --batchsize ${BATCH} --probe all"
+        command="CUDA_VISIBLE_DEVICES=${CUDA} python examples/eval_model.py -t ${TASK} -mf ${mf} --batchsize ${BATCH} --probe ${PROBE}"
         echo $command
         #eval "$command"
     fi
