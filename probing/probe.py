@@ -39,6 +39,7 @@ def setup_args():
     parser.add_argument('-hidden', '--hidden_layer_dim', type=int, default=128)
     parser.add_argument('-lr', '--learning_rate', type=float, default=0.001)
     parser.add_argument('-drop', '--dropout', type=float, default=0.5)
+    parser.add_argument('l2', 'l2-weight', type=float, default=0)
 
     return vars(parser.parse_args())
 
@@ -117,6 +118,7 @@ if __name__ == '__main__':
             module__input_dim=input_dim,
             module__output_dim=output_dim,
             module__hidden_dim=opt['hidden_layer_dim'],
+            optimizer__weight_decay=['l2_weight'],
             module__dropout=opt['dropout'],
             device='cuda',
             # Training
