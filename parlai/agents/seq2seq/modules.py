@@ -343,6 +343,7 @@ class RNNDecoder(nn.Module):
         self.layers = numlayers
         self.hsz = hiddensize
         self.esz = embeddingsize
+        self.padding_idx = padding_idx
 
         self.lt = nn.Embedding(
             num_features, embeddingsize, padding_idx=padding_idx, sparse=sparse

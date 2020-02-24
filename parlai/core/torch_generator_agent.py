@@ -638,7 +638,7 @@ class TorchGeneratorAgent(TorchAgent):
         elif self.opt['probe'] == 'decoder':
             embeddings = self._probe_decoder(batch)
         elif self.opt['probe'] == 'embeddings':
-            embeddings = self._probe_embeddings(batch)
+            embeddings = self._probe_encoder_embeddings(batch)
         else:
             raise Exception(f"Input type {self.opt['probe']} not understood.")
 
@@ -783,10 +783,13 @@ class TorchGeneratorAgent(TorchAgent):
         return beam_preds_scores, beams
 
     def _probe_all(self, batch):
+        encoder_word_embeddings = self._probe_encoder_embeddings(batch)
+        decoder_word_embeddings = self._probe_decoder_embeddings(batch)
         encoder_embeddings = self._probe_encoder(batch)
         decoder_embeddings = self._probe_decoder(batch)
 
-        utterance_embeddings = np.hstack((encoder_embeddings, decoder_embeddings))
+        utterance_embeddings = np.hstack((encoder_word_embeddings, encoder_embeddings,
+                                          decoder_word_embeddings, decoder_embeddings))
 
         return utterance_embeddings
 
@@ -855,9 +858,10 @@ class TorchGeneratorAgent(TorchAgent):
             # utterance_embeddings: [batch size, embedding size]
             # utterance_embeddings = masked.sum(dim=1) / text_lengths
             avg_embeddings = masked.sum(dim=1) / text_lengths
-            min_embeddings = masked.min(dim=1).values
-            max_embeddings = masked.max(dim=1).values
-            utterance_embeddings = torch.cat((avg_embeddings, min_embeddings, max_embeddings), dim=1)
+            # min_embeddings = masked.min(dim=1).values
+            # max_embeddings = masked.max(dim=1).values
+            # utterance_embeddings = torch.cat((avg_embeddings, min_embeddings, max_embeddings), dim=1)
+            utterance_embeddings = avg_embeddings
             utterance_embeddings = utterance_embeddings.cpu().numpy()
 
         return utterance_embeddings
@@ -880,9 +884,10 @@ class TorchGeneratorAgent(TorchAgent):
 
         # utterance_embeddings: [batch size, embedding size]
         avg_embeddings = masked.sum(dim=1) / label_lens.float().unsqueeze(1)
-        min_embeddings = masked.min(dim=1).values
-        max_embeddings = masked.max(dim=1).values
-        utterance_embeddings = torch.cat((avg_embeddings, min_embeddings, max_embeddings), dim=1)
+        # min_embeddings = masked.min(dim=1).values
+        # max_embeddings = masked.max(dim=1).values
+        # utterance_embeddings = torch.cat((avg_embeddings, min_embeddings, max_embeddings), dim=1)
+        utterance_embeddings = avg_embeddings
         utterance_embeddings = utterance_embeddings.cpu().numpy()
 
         if type(self.model).__name__ != 'TransformerGeneratorModel':
@@ -894,12 +899,11 @@ class TorchGeneratorAgent(TorchAgent):
 
         return utterance_embeddings
 
-    def _probe_embeddings(self, batch):
+    def _probe_encoder_embeddings(self, batch):
         encoder = self.model.encoder
         if type(self.model).__name__ != 'TransformerGeneratorModel':
             emb_outputs = encoder.lt(*self._model_input(batch))
             mask = batch.text_vec != encoder.padding_idx
-            masked = emb_outputs * mask.float().unsqueeze(2).cuda()
 
         else:
             emb_outputs = encoder.embeddings(*self._model_input(batch))
@@ -911,13 +915,14 @@ class TorchGeneratorAgent(TorchAgent):
             positions = (mask.cumsum(dim=1, dtype=torch.int64) - 1).clamp_(min=0)
             position_embs = encoder.position_embeddings(positions).expand_as(emb_outputs)
             emb_outputs = emb_outputs + position_embs
-            masked = emb_outputs * mask.float().unsqueeze(2).cuda()
 
+        masked = emb_outputs * mask.float().unsqueeze(2).cuda()
         text_lengths = torch.tensor(batch.text_lengths).float().unsqueeze(1).cuda()
         avg_embeddings = masked.sum(dim=1) / text_lengths
-        min_embeddings = masked.min(dim=1).values
-        max_embeddings = masked.max(dim=1).values
-        utterance_embeddings = torch.cat((avg_embeddings, min_embeddings, max_embeddings), dim=1)
+        # min_embeddings = masked.min(dim=1).values
+        # max_embeddings = masked.max(dim=1).values
+        # utterance_embeddings = torch.cat((avg_embeddings, min_embeddings, max_embeddings), dim=1)
+        utterance_embeddings = avg_embeddings
         utterance_embeddings = utterance_embeddings.cpu().numpy()
 
         if type(self.model).__name__ != 'TransformerGeneratorModel':
@@ -928,6 +933,42 @@ class TorchGeneratorAgent(TorchAgent):
             utterance_embeddings = _utterance_embeddings
 
         return utterance_embeddings
+
+    def _probe_decoder_embeddings(self, batch):
+        decoder = self.model.decoder
+        if type(self.model).__name__ != 'TransformerGeneratorModel':
+            emb_outputs = decoder.lt(batch.label_vec)
+            mask = batch.label_vec != decoder.padding_idx
+
+        else:
+            emb_outputs = decoder.embeddings(batch.label_vec)
+
+            if decoder.embeddings_scale:
+                emb_outputs = emb_outputs * np.sqrt(decoder.dim)
+            # Apply mask and position embs
+            mask = batch.label_vec != self.model.encoder.padding_idx
+            positions = (mask.cumsum(dim=1, dtype=torch.int64) - 1).clamp_(min=0)
+            position_embs = decoder.position_embeddings(positions).expand_as(emb_outputs)
+            emb_outputs = emb_outputs + position_embs
+
+        masked = emb_outputs * mask.float().unsqueeze(2).cuda()
+        label_lengths = torch.tensor(batch.label_lengths).float().unsqueeze(1).cuda()
+        avg_embeddings = masked.sum(dim=1) / label_lengths
+        # min_embeddings = masked.min(dim=1).values
+        # max_embeddings = masked.max(dim=1).values
+        # utterance_embeddings = torch.cat((avg_embeddings, min_embeddings, max_embeddings), dim=1)
+        utterance_embeddings = avg_embeddings
+        utterance_embeddings = utterance_embeddings.cpu().numpy()
+
+        if type(self.model).__name__ != 'TransformerGeneratorModel':
+            # Sort embeddings into original order. Undo pack padded sequence
+            _utterance_embeddings = np.zeros_like(utterance_embeddings)
+            for i, j in enumerate(batch['valid_indices']):
+                _utterance_embeddings[j] = utterance_embeddings[i]
+            utterance_embeddings = _utterance_embeddings
+
+        return utterance_embeddings
+
 
 class _HypothesisTail(object):
     """Hold some bookkeeping about a hypothesis."""
