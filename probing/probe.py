@@ -118,7 +118,7 @@ if __name__ == '__main__':
             module__input_dim=input_dim,
             module__output_dim=output_dim,
             module__hidden_dim=opt['hidden_layer_dim'],
-            optimizer__weight_decay=['l2_weight'],
+            optimizer__weight_decay=opt['l2_weight'],
             module__dropout=opt['dropout'],
             device='cuda',
             # Training
