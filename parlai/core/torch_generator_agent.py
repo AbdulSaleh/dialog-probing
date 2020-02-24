@@ -638,7 +638,7 @@ class TorchGeneratorAgent(TorchAgent):
         elif self.opt['probe'] == 'decoder':
             embeddings = self._probe_decoder(batch)
         elif self.opt['probe'] == 'embeddings':
-            embeddings = self._probe_encoder_embeddings(batch)
+            embeddings = self._probe_embeddings(batch)
         else:
             raise Exception(f"Input type {self.opt['probe']} not understood.")
 
@@ -791,10 +791,6 @@ class TorchGeneratorAgent(TorchAgent):
         utterance_embeddings = np.hstack((encoder_word_embeddings, encoder_embeddings,
                                           decoder_word_embeddings, decoder_embeddings))
 
-        # utterance_embeddings = np.hstack((encoder_word_embeddings,
-        #                                   decoder_word_embeddings))
-
-
         return utterance_embeddings
 
     def _probe_encoder(self, batch):
@@ -900,6 +896,14 @@ class TorchGeneratorAgent(TorchAgent):
             for i, j in enumerate(batch['valid_indices']):
                 _utterance_embeddings[j] = utterance_embeddings[i]
             utterance_embeddings = _utterance_embeddings
+
+        return utterance_embeddings
+
+    def _probe_embeddings(self, batch):
+        encoder_word_embeddings = self._probe_encoder_embeddings(batch)
+        decoder_word_embeddings = self._probe_decoder_embeddings(batch)
+
+        utterance_embeddings = np.hstack((encoder_word_embeddings, decoder_word_embeddings))
 
         return utterance_embeddings
 
