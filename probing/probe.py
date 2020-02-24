@@ -23,7 +23,8 @@ def setup_args():
 
     parser.add_argument('-t', '--task', type=str, required=True,
                         help='Usage: -t trecquestion\nOnly compatible with names in probing_tasks')
-
+    parser.add_argument('-p', '--probing-module', type=str, required=True,
+                        choices=['all', 'encoder', 'decoder', 'embeddings'])
     parser.add_argument('-m', '--model', type=str, required=True,
                         help='Usage: -m GloVe or -m dailydialg\default_transformer\n'
                              'Model directory of embeddings to be probed.'
@@ -50,13 +51,14 @@ if __name__ == '__main__':
     opt = setup_args()
     task_name = opt['task']
     model = opt['model']
+    module = opt['probing_module']
     runs = opt['runs']
 
     project_dir = Path(__file__).resolve().parent.parent
 
     # Load embeddings
-    embeddings_path = project_dir.joinpath('trained', model, 'probing',
-                                           task_name, task_name + '.pkl')
+    probing_dir = project_dir.joinpath('trained', model, 'probing', module, task_name)
+    embeddings_path = probing_dir.joinpath(task_name + '.pkl')
     print(f'Loading embeddings from {embeddings_path}')
     X = pickle.load(open(embeddings_path, 'rb'))
     X = X.astype(np.float32)
@@ -108,7 +110,7 @@ if __name__ == '__main__':
         print(15 * '*')
         print('')
 
-        save_dir = project_dir.joinpath('trained', model, 'probing', task_name, 'runs', str(run))
+        save_dir = probing_dir.joinpath('runs', str(run))
 
         # Init skorch classifier
         print('Initializing MLP!')
@@ -175,15 +177,14 @@ if __name__ == '__main__':
         test_acc_list.append(test_acc)
 
     # Calculate confidence intervals
-    confidence_dir = project_dir.joinpath('trained', model, 'probing', task_name, 'runs')
-    confidence_path = confidence_dir.joinpath('confidence.json')
+    results_path = probing_dir.joinpath('results.json')
     mean = np.mean(test_acc_list)
     std = np.std(test_acc_list)
-    confidence = {'mean': mean,
-                  'lower': mean - 2 * std,
-                  'upper': mean + 2 * std,
-                  'std': std}
-    print(confidence)
-    json.dump(confidence, open(confidence_path, 'w'))
+    results = {'mean': mean,
+               'lower': mean - 2 * std,
+               'upper': mean + 2 * std,
+               'std': std}
+    print(results)
+    json.dump(results, open(results_path, 'w'))
 
     print("Time elapsed: {:0.1f} minutes".format((time() - start)/60))

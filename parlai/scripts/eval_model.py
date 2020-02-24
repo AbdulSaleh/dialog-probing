@@ -104,13 +104,20 @@ def _eval_single_world(opt, agent, task):
         task_name = world.opt['task'].split('.')[-2]
         model_dir = Path(world.opt['model_file']).parent
         probing_dir = model_dir.joinpath('probing')
-        task_dir = probing_dir.joinpath(task_name)
+        probing_module_dir = probing_dir.joinpath(world.opt['probe'])
+        task_dir = probing_module_dir.joinpath(task_name)
         save_path = task_dir.joinpath(task_name + '.pkl')
         if not probing_dir.exists():
             print("*" * 10, "\n", "*" * 10)
             print(f"Creating dir to save probing outputs at {probing_dir}")
             print("*" * 10, "\n", "*" * 10)
             probing_dir.mkdir()
+
+        if not probing_module_dir.exists():
+            print("*" * 10, "\n", "*" * 10)
+            print(f"Creating dir to save {world.opt['probe']} probing outputs at {probing_module_dir}")
+            print("*" * 10, "\n", "*" * 10)
+            probing_module_dir.mkdir()
 
         if not task_dir.exists():
             print("*" * 10, "\n", "*" * 10)
@@ -137,15 +144,6 @@ def _eval_single_world(opt, agent, task):
             pickle.dump(world.world.agents[1].probing_outputs, open(save_path, 'wb'))
         except:
             pickle.dump(world.world.agents[1].probing_outputs, open(save_path, 'wb'), protocol=4)
-
-        if world.opt['probe'] == 'all':
-            open(task_dir.joinpath('all.txt'), 'w')
-        elif world.opt['probe'] == 'encoder':
-            open(task_dir.joinpath('encoder.txt'), 'w')
-        elif world.opt['probe'] == 'decoder':
-            open(task_dir.joinpath('decoder.txt'), 'w')
-        elif world.opt['probe'] == 'embeddings':
-            open(task_dir.joinpath('embeddings.txt'), 'w')
 
     report = world.report()
     world.reset()
