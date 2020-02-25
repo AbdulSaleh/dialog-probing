@@ -236,6 +236,29 @@ def process_task(task_name, save_dir, glove):
         current = encode_glove(current, glove, dict=dict)
         embeddings = np.hstack((history, current))
 
+    elif task_name == 'dstc8':
+        data_dir = Path(project_dir, 'data', 'probing', 'dstc8')
+        data = open(data_dir.joinpath('dstc8.txt'))
+
+        history = []
+        current = []
+        for line in data:
+            line = line.rstrip('\n')
+            turn = line.split('\t')[0]
+            if turn.startswith('text:'):
+                # start a new episode
+                episode = []
+                turn = turn[len('text:'):]
+            episode.append(turn)
+
+            if 'episode_done:True' in line:
+                history.append(' '.join(episode))
+                current.append(turn)
+
+        history = encode_glove(history, glove, dict=dict)
+        current = encode_glove(current, glove, dict=dict)
+        embeddings = np.hstack((history, current))
+
     elif task_name == 'squad':
         data_dir = Path(project_dir, 'data', 'probing', 'squad')
         data = open(data_dir.joinpath('squad.txt'))
