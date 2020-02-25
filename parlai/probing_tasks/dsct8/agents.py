@@ -17,8 +17,8 @@ def _path(opt):
   return os.path.join(
       opt['datapath'],
       'probing',
-      'dsct8_multi',
-      'dsct8_multi.txt')
+      'dsct8',
+      'dsct8.txt')
 
 
 class DefaultTeacher(ParlAIDialogTeacher):
