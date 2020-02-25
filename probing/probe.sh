@@ -21,12 +21,12 @@ do
            do
                 m="${DATASET}/${dir}"
                 command="CUDA_VISIBLE_DEVICES=${CUDA} python probing/probe.py -t ${TASK_NAME} -p ${MODULE} -m ${m} -ep ${EPOCHS} -bs ${BATCHSIZE} -lr ${LR} -hidden ${HIDDEN}"
-            #    eval "$command"
-                echo "$command"
+                eval "$command"
+#                echo "$command"
            done
         fi
     done
 done
 command="CUDA_VISIBLE_DEVICES=${CUDA} python probing/probe.py -t ${TASK_NAME} -m GloVe -ep ${EPOCHS} -bs ${BATCHSIZE} -lr ${LR} -hidden ${HIDDEN}"
-#eval "$command"
-echo "$command"
+eval "$command"
+#echo "$command"
