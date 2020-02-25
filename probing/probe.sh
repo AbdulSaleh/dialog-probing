@@ -28,6 +28,6 @@ do
         fi
     done
 done
-command="CUDA_VISIBLE_DEVICES=${CUDA} python probing/probe.py -t ${TASK_NAME} -m GloVe -ep ${EPOCHS} -bs ${BATCHSIZE} -lr ${LR} -hidden ${HIDDEN}"
+command="CUDA_VISIBLE_DEVICES=${CUDA} python probing/probe.py -t ${TASK_NAME} -m GloVe -ep ${EPOCHS} -r ${RUNS} -bs ${BATCHSIZE} -lr ${LR} -hidden ${HIDDEN}"
 eval "$command"
 #echo "$command"
