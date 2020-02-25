@@ -12,11 +12,11 @@ random.seed(0)
 project_dir = Path(__file__).resolve().parent.parent.parent.parent
 data_dir = Path(project_dir, 'data', 'probing', 'multi_woz')
 
-question_path = data_dir.joinpath('multi_woz.txt')
+text_path = data_dir.joinpath('multi_woz.txt')
 label_path = data_dir.joinpath('labels.txt')
 info_path = data_dir.joinpath('info.pkl')
 
-question_file = open(question_path, 'w')
+text_file = open(text_path, 'w')
 label_file = open(label_path, 'w')
 info_file = open(info_path, 'wb')
 
@@ -55,7 +55,7 @@ with open(data_dir.joinpath('data.json'), encoding='latin-1') as json_file:
 
 
 for dialog, label in zip(dialogs, labels):
-    question_file.write(dialog)
+    text_file.write(dialog)
     label_file.write(label + '\n')
 
 pickle.dump(info, info_file)
