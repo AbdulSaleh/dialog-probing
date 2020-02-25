@@ -23,8 +23,8 @@ def setup_args():
 
     parser.add_argument('-t', '--task', type=str, required=True,
                         help='Usage: -t trecquestion\nOnly compatible with names in probing_tasks')
-    parser.add_argument('-p', '--probing-module', type=str, required=True,
-                        choices=['all', 'encoder', 'decoder', 'embeddings'])
+    parser.add_argument('-p', '--probing-module', type=str, default='',
+                        choices=['', 'all', 'encoder', 'decoder', 'embeddings'])
     parser.add_argument('-m', '--model', type=str, required=True,
                         help='Usage: -m GloVe or -m dailydialg\default_transformer\n'
                              'Model directory of embeddings to be probed.'
