@@ -3,7 +3,7 @@
 # LICENSE file in the root directory of this source tree.
 
 """
-Script to create dsct8 dataset in ParlAI format.
+Script to create dstc8 dataset in ParlAI format.
 
 Note that this script should be manually run by the user and not through ParlAI
 to process the data, and hence _parse.py instead of parse.py.
@@ -31,12 +31,12 @@ def concat_json_files(folderpath):
 
 
 train_path = data_dir.joinpath('train')
-test_path = data_dir.joinpath('test')
-dev_path = data_dir.joinpath('dev')
+test_path = data_dir.joinpath('dev')
+# dev_path = data_dir.joinpath('dev')
 
 train_data = concat_json_files(train_path)
 test_data = concat_json_files(test_path)
-dev_data = concat_json_files(dev_path)  # dev data is ignored for now
+# dev_data = concat_json_files(dev_path)  # dev data is ignored for now
 
 # Save files
 dialog_path = data_dir.joinpath('dstc8.txt')
@@ -54,16 +54,8 @@ def process_split(data):
     for example in data:
         dialog = example['turns']
         turns = [turn['utterance'] for turn in dialog]
-        possible_turns = []
-        for i in range(0, min(float('inf'), len(dialog)), 2):
-            intents = [dialog[i]['frames'][0]['state']['active_intent']]
-            if len(set(intents)) == 1:
-                possible_turns.append(i)
 
-        if len(possible_turns) == 0:
-            continue
-
-        chosen_turn = random.choice(possible_turns)
+        chosen_turn = random.choice(range(0, min(float('inf'), len(dialog)), 2))
         line = ('text:' + '\n'.join(turns[:chosen_turn + 1])
                 + '\tlabels:' + '\tepisode_done:True\n')
         label = dialog[chosen_turn]['frames'][0]['state']['active_intent']
@@ -75,12 +67,11 @@ def process_split(data):
 
 
 train_data_len = process_split(train_data)
-dev_data_len = process_split(dev_data)
+# dev_data_len = process_split(dev_data)
 test_data_len = process_split(test_data)
 
 # Save data info
 info = {'n_train': train_data_len,
-        'n_dev': dev_data_len,
         'n_test': test_data_len}
 
 pickle.dump(info, info_file)
