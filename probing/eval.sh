@@ -1,9 +1,9 @@
 #!/bin/bash
 
-# Example usage bash probing/eval.sh trecquestion 0 decoder
+# Example usage bash probing/eval.sh trecquestion 0 # decoder
 TASK_NAME=$1
 CUDA=$2
-PROBE=$3
+#PROBE=$3
 
 TASK="parlai.probing_tasks.${TASK_NAME}.agents"
 
@@ -31,11 +31,13 @@ do
             else
                 BATCH=1400
             fi
-
-            mf="trained/${DATASET}/${dir}/${m}"
-            command="CUDA_VISIBLE_DEVICES=${CUDA} python examples/eval_model.py -t ${TASK} -mf ${mf} --batchsize ${BATCH} --probe ${PROBE}"
-    #        echo $command
-            eval "$command"
+            for MODULE in embeddings encoder all
+            do
+                mf="trained/${DATASET}/${dir}/${m}"
+                command="CUDA_VISIBLE_DEVICES=${CUDA} python examples/eval_model.py -t ${TASK} -mf ${mf} --batchsize ${BATCH} --probe ${MODULE}"
+        #        echo $command
+                eval "$command"
+            done
         fi
     done
 done
