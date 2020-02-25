@@ -12,30 +12,30 @@ do
     DIRS=`ls trained/${DATASET}`
     for dir in $DIRS
     do
-    if [[ $dir != 'old' ]]
-    then
-        if [[ $dir == *'transformer'* ]]
+        if [[ $dir != 'old' ]]
         then
-            m="transformer"
-        elif [[ $dir == *'seq2seq_att'* ]]
-        then
-            m="seq2seq_att"
-        elif [[ $dir == *'seq2seq'* ]]
-        then
-            m="seq2seq"
-        fi
+            if [[ $dir == *'transformer'* ]]
+            then
+                m="transformer"
+            elif [[ $dir == *'seq2seq_att'* ]]
+            then
+                m="seq2seq_att"
+            elif [[ $dir == *'seq2seq'* ]]
+            then
+                m="seq2seq"
+            fi
 
-        if [[ $dir == *'large'* ]] || [[ $dir == *'finetuned'* ]]
-        then
-            BATCH=700
-        else
-            BATCH=1400
-        fi
+            if [[ $dir == *'large'* ]] || [[ $dir == *'finetuned'* ]]
+            then
+                BATCH=700
+            else
+                BATCH=1400
+            fi
 
-        mf="trained/${DATASET}/${dir}/${m}"
-        command="CUDA_VISIBLE_DEVICES=${CUDA} python examples/eval_model.py -t ${TASK} -mf ${mf} --batchsize ${BATCH} --probe ${PROBE}"
-#        echo $command
-        eval "$command"
-    fi
+            mf="trained/${DATASET}/${dir}/${m}"
+            command="CUDA_VISIBLE_DEVICES=${CUDA} python examples/eval_model.py -t ${TASK} -mf ${mf} --batchsize ${BATCH} --probe ${PROBE}"
+    #        echo $command
+            eval "$command"
+        fi
     done
 done
