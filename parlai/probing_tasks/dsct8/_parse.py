@@ -69,7 +69,7 @@ def process_split(data):
         label = dialog[chosen_turn]['frames'][0]['state']['active_intent']
 
         dialog_file.write(line)
-        label_file.write(label)
+        label_file.write(label+'\n')
         count += 1
     return count
 
