@@ -31,7 +31,7 @@ do
             else
                 BATCH=1400
             fi
-            for MODULE in embeddings encoder all
+            for MODULE in encoder_embeddings encoder_state encoder_embeddings_state
             do
                 mf="trained/${DATASET}/${dir}/${m}"
                 command="CUDA_VISIBLE_DEVICES=${CUDA} python examples/eval_model.py -t ${TASK} -mf ${mf} --batchsize ${BATCH} --probe ${MODULE}"

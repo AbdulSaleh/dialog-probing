@@ -1264,22 +1264,28 @@ class ParlAIDialogTeacher(FixedDialogTeacher):
                     eps = [{'text': turn[len('text:'):],
                             'labels': [' '],
                             'episode_done':True}]
-
-                if not (turn.startswith('text:') or
-                        'episode_done:True' in line):
-                    # Continue interaction
+                else:
+                    # Continue previous episode
                     eps[0]['text'] = eps[0]['text'] + ' __end__ ' + turn
 
                 if 'episode_done:True' in line:
-                    if self.opt['probe'] in {'all', 'embeddings', 'decoder'}:
-                        # Probing decoder, add last turn to labels
-                        turn = ' ' if turn.startswith('text:') else turn
-                        eps[0]['labels'] = [turn]
-                    else:
-                        # Probing encoder, add last turn to text
-                        turn = '' if turn.startswith('text:') else ' __end__ ' + turn
-                        eps[0]['text'] = eps[0]['text'] + turn
                     self.episodes.append(eps)
+
+                # if not (turn.startswith('text:') or
+                #         'episode_done:True' in line):
+                #     # Continue interaction
+                #     eps[0]['text'] = eps[0]['text'] + ' __end__ ' + turn
+
+                # if 'episode_done:True' in line:
+                #     if self.opt['probe'] in {'all', 'encoder_decoder_embeddings', 'decoder_state'}:
+                #         # Probing decoder, add last turn to labels
+                #         turn = ' ' if turn.startswith('text:') else turn
+                #         eps[0]['labels'] = [turn]
+                #     else:
+                #         # Probing encoder, add last turn to text
+                #         turn = '' if turn.startswith('text:') else ' __end__ ' + turn
+                #         eps[0]['text'] = eps[0]['text'] + turn
+                #     self.episodes.append(eps)
 
         else:
             for line in read:

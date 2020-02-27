@@ -18,7 +18,7 @@ do
     do
         if [ $dir != 'old' ]
         then
-           for MODULE in embeddings encoder all
+           for MODULE in encoder_embeddings encoder_state encoder_embeddings_state
            do
                 m="${DATASET}/${dir}"
                 command="CUDA_VISIBLE_DEVICES=${CUDA} python probing/probe.py -t ${TASK_NAME} -p ${MODULE} -m ${m} -ep ${EPOCHS} -r ${RUNS} -bs ${BATCHSIZE} -lr ${LR} -hidden ${HIDDEN}"

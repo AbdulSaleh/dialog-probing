@@ -731,7 +731,6 @@ class TorchAgent(ABC, Agent):
         self.history = self.build_history()
 
         self.is_training = False  # track whether model is training
-        self.is_probing = False
         self.rank_candidates = opt['rank_candidates']
         self.add_person_tokens = opt.get('person_tokens', False)
         # set interactive mode or not according to options.
