@@ -28,7 +28,7 @@ n_neu = 0
 
 dialogs_dir = data_dir.joinpath('InteractiveSentimentDataset')
 for filename in os.listdir(dialogs_dir):
-    with open(dialogs_dir.joinpath(filename), 'r') as f:
+    with open(dialogs_dir.joinpath(filename), 'r', encoding='utf-8') as f:
         example = f.readlines()
     utts = []
     sents = []
