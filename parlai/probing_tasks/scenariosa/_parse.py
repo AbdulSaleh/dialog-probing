@@ -18,7 +18,7 @@ text_path = data_dir.joinpath('scenariosa.txt')
 label_path = data_dir.joinpath('labels.txt')
 info_path = data_dir.joinpath('info.pkl')
 
-text_file = open(text_path, 'w')
+text_file = open(text_path, 'w', encoding='utf=8')
 label_file = open(label_path, 'w')
 info_file = open(info_path, 'wb')
 
@@ -28,7 +28,7 @@ n_neu = 0
 
 dialogs_dir = data_dir.joinpath('InteractiveSentimentDataset')
 for filename in os.listdir(dialogs_dir):
-    with open(dialogs_dir.joinpath(filename), 'r', encoding='utf-8') as f:
+    with open(dialogs_dir.joinpath(filename), 'r', encoding='cp1252') as f:
         example = f.readlines()
     utts = []
     sents = []
