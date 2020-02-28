@@ -1748,7 +1748,7 @@ class TorchAgent(ABC, Agent):
         if self.is_training:
             output = self.train_step(batch)
 
-        elif self.opt['probe']:
+        elif self.opt.get('probe', ''):
             with torch.no_grad():
                 # Very similar to eval_step
                 # Avoids unnecessary computation
