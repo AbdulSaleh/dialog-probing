@@ -112,13 +112,12 @@ def process_task(task_name, save_dir, glove):
         embeddings = encode_glove(examples, glove, dict=dict)
 
     elif task_name == 'ushuffle_dailydialog':
-        # raise NotImplemented('Bug needs to be fixed')
         # This task is an exception as we load the shuffled and processed
         # probing data in ParlAI format instead of the raw data.
         data_dir = Path(project_dir, 'data', 'probing', 'ushuffle_dailydialog')
         data = open(data_dir.joinpath('shuffled.txt'))
-
-        dialogs = []
+        history = []
+        current = []
         for line in data:
             line = line.rstrip('\n')
             turn = line.split('\t')[0]
@@ -129,9 +128,27 @@ def process_task(task_name, save_dir, glove):
             episode.append(turn)
 
             if 'episode_done:True' in line:
-                dialogs.append(' '.join(episode))
+                history.append(' '.join(episode))
+                current.append(turn)
 
-        embeddings = encode_glove(dialogs, glove, dict=dict)
+        history = encode_glove(history, glove, dict=dict)
+        current = encode_glove(current, glove, dict=dict)
+        embeddings = np.hstack((history, current))
+
+        # dialogs = []
+        # for line in data:
+        #     line = line.rstrip('\n')
+        #     turn = line.split('\t')[0]
+        #     if turn.startswith('text:'):
+        #         # start a new episode
+        #         episode = []
+        #         turn = turn[len('text:'):]
+        #     episode.append(turn)
+        #
+        #     if 'episode_done:True' in line:
+        #         dialogs.append(' '.join(episode))
+        #
+        # embeddings = encode_glove(dialogs, glove, dict=dict)
 
     elif task_name == 'act_dailydialog':
         data_dir = Path(project_dir, 'data', 'probing', 'act_dailydialog')
