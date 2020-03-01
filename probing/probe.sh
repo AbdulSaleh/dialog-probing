@@ -16,6 +16,7 @@ do
     dirs=`ls trained/${DATASET}`
     for dir in $dirs
     do
+    continue
         if [ $dir != 'old' ]
         then
            for MODULE in encoder_embeddings encoder_state encoder_embeddings_state
