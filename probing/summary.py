@@ -92,7 +92,7 @@ for module in modules:
             acc = full_results[model][module][task]
             row = row + '{:0.1f} , '.format(acc*100)
 
-        print(row)
+        print(row[:-2])
 
 print('#' * 3)
 print('#' * 3)
