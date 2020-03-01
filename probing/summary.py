@@ -117,7 +117,7 @@ if args.sheets:
                 acc = full_results[model][module][task]
                 row = row + '{:0.1f},'.format(acc*100)
 
-            print(row[1:])
+            print(row[:-1])
 
 
 if args.latex:
