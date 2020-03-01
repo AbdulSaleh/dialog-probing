@@ -109,7 +109,7 @@ if args.sheets:
         print(10 * '*')
         print(10 * '*')
         print()
-        print("   ".join([tasks_dict[task] for task in tasks]))
+        print(",".join([tasks_dict[task] for task in tasks]))
         for model in models:
             # row = model + " " * (len(header.split('\t')[0]) - len(model)) + "\t"
             row = ''
@@ -117,7 +117,7 @@ if args.sheets:
                 acc = full_results[model][module][task]
                 row = row + '{:0.1f},'.format(acc*100)
 
-            print(row)
+            print(row[1:])
 
 
 if args.latex:
