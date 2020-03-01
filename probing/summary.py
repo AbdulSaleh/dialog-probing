@@ -98,7 +98,7 @@ print('#' * 3)
 print('#' * 3)
 print('#' * 3)
 
-if args['latex']:
+if args.latex:
     for module in modules:
         print()
         print(10 * '*')
