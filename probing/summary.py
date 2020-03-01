@@ -4,6 +4,12 @@
 import os
 import json
 from pathlib import Path
+import argparse
+
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--latex', action='store_true')
+args = parser.parse_args()
 
 
 project_dir = Path(__file__).resolve().parent.parent
@@ -16,8 +22,18 @@ models = ['scratch_seq2seq', 'scratch_seq2seq_within',
           'finetuned_seq2seq', 'finetuned_seq2seq_within',
           'finetuned_seq2seq_att', 'finetuned_seq2seq_att_within',
           'finetuned_transformer', 'finetuned_transformer_within']
+
 tasks = ['trecquestion', 'dialoguenli', 'multi_woz', 'dstc8', 'snips',
          'wnli', 'scenariosa', 'topic_dailydialog', 'ushuffle_dailydialog']
+tasks_dict = {'trecquestion': 'TREC',
+              'dialoguenli': 'DNLI',
+              'multi_woz': 'MWOZ',
+              'dstc8': 'DSTC8',
+              'snips': 'SNIPS',
+              'wnli': 'WNLI',
+              'scenariosa': 'SSA',
+              'topic_dailydialog': 'Topic DD',
+              'ushuffle_dailydialog': 'Shuffle DD'}
 full_results = {}
 # tasks = set()
 for dataset in datasets:
@@ -59,7 +75,7 @@ for dataset in datasets:
 longest_model = max([len(m) for m in models])
 header = "Model" + " " * (longest_model - len("Model")) + "\t"
 for task in tasks:
-    header += task + "\t"
+    header += tasks_dict[task] + "\t"
 
 for module in modules:
     print()
@@ -74,6 +90,28 @@ for module in modules:
         row = model + " " * (len(header.split('\t')[0]) - len(model)) + "\t"
         for task in tasks:
             acc = full_results[model][module][task]
-            row = row + '{:0.3f}\t'.format(acc)
+            row = row + '{:0.1f}\t'.format(acc*100)
 
         print(row)
+
+print('#' * 3)
+print('#' * 3)
+print('#' * 3)
+
+if args['latex']:
+    for module in modules:
+        print()
+        print(10 * '*')
+        print(10 * '*')
+        print(module)
+        print(10 * '*')
+        print(10 * '*')
+        print()
+        print(header)
+        for model in models:
+            row = model + " " * (len(header.split('\t')[0]) - len(model)) + "\t" + '&'
+            for task in tasks:
+                acc = full_results[model][module][task]
+                row = row + '{:0.1f} & '.format(acc*100)
+            print(row)
+
