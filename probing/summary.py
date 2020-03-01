@@ -90,7 +90,7 @@ for module in modules:
         row = model + " " * (len(header.split('\t')[0]) - len(model)) + "\t"
         for task in tasks:
             acc = full_results[model][module][task]
-            row = row + '{:0.1f}\t'.format(acc*100)
+            row = row + '{:0.1f} , '.format(acc*100)
 
         print(row)
 
