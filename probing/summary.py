@@ -113,5 +113,5 @@ if args.latex:
             for task in tasks:
                 acc = full_results[model][module][task]
                 row = row + '{:0.1f} & '.format(acc*100)
-            print(row)
+            print(row[:-2] + ' \\')
 
