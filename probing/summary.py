@@ -9,6 +9,7 @@ import argparse
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--latex', action='store_true')
+parser.add_argument('--sheets', action='store_true')
 args = parser.parse_args()
 
 
@@ -75,7 +76,7 @@ for dataset in datasets:
 longest_model = max([len(m) for m in models])
 header = "Model" + " " * (longest_model - len("Model")) + "\t"
 for task in tasks:
-    header += tasks_dict[task] + "\t"
+    header += tasks_dict[task] + "   "
 
 for module in modules:
     print()
@@ -90,15 +91,40 @@ for module in modules:
         row = model + " " * (len(header.split('\t')[0]) - len(model)) + "\t"
         for task in tasks:
             acc = full_results[model][module][task]
-            row = row + '{:0.1f} , '.format(acc*100)
+            row = row + '{:0.1f}  '.format(acc*100)
 
-        print(row[:-2])
+        print(row)
 
-print('#' * 3)
-print('#' * 3)
-print('#' * 3)
+
+if args.sheets:
+    print('#' * 3)
+    print('#' * 3)
+    print('#' * 3)
+
+    for module in modules:
+        print()
+        print(10 * '*')
+        print(10 * '*')
+        print(module)
+        print(10 * '*')
+        print(10 * '*')
+        print()
+        print(header)
+        for model in models:
+            # row = model + " " * (len(header.split('\t')[0]) - len(model)) + "\t"
+            row = ''
+            for task in tasks:
+                acc = full_results[model][module][task]
+                row = row + '{:0.1f} , '.format(acc*100)
+
+            print(row[:-2] + '\n')
+
 
 if args.latex:
+    print('#' * 3)
+    print('#' * 3)
+    print('#' * 3)
+
     for module in modules:
         print()
         print(10 * '*')
