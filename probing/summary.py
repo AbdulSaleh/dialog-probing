@@ -16,9 +16,10 @@ models = ['scratch_seq2seq', 'scratch_seq2seq_within',
           'finetuned_seq2seq', 'finetuned_seq2seq_within',
           'finetuned_seq2seq_att', 'finetuned_seq2seq_att_within',
           'finetuned_transformer', 'finetuned_transformer_within']
-# tasks = ['trecquestion', 'multi_woz']
+tasks = ['trecquestion', 'dialoguenli', 'multi_woz', 'dstc8', 'snips',
+         'wnli', 'scenariosa', 'topic_dailydialog', 'ushuffle_dailydialog']
 full_results = {}
-tasks = set()
+# tasks = set()
 for dataset in datasets:
     model_dirs = []
     for m in project_dir.joinpath('trained', dataset).glob("*"):
@@ -52,9 +53,9 @@ for dataset in datasets:
                 task = task_dir.stem
                 results = json.load(open(task_dir.joinpath('results.json')))
                 full_results[model][module][task] = results['mean']
-                tasks.add(task)
+                # tasks.add(task)
 
-tasks = list(tasks)
+# tasks = list(tasks)
 longest_model = max([len(m) for m in models])
 header = "Model" + " " * (longest_model - len("Model")) + "\t"
 for task in tasks:

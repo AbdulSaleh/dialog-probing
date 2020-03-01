@@ -12,11 +12,6 @@ do
     DIRS=`ls trained/${DATASET}`
     for dir in $DIRS
     do
-        if ! [[ $dir == *'finetuned'* ]]
-        then
-        continue
-        fi
-
         if [[ $dir != 'old' ]]
         then
             if [[ $dir == *'transformer'* ]]
