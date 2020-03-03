@@ -25,7 +25,7 @@ models = ['scratch_seq2seq', 'scratch_seq2seq_within',
           'finetuned_transformer', 'finetuned_transformer_within']
 
 tasks = ['trecquestion', 'dialoguenli', 'multi_woz', 'dstc8', 'snips',
-         'wnli', 'scenariosa', 'topic_dailydialog', 'ushuffle_dailydialog']
+         'wnli', 'scenariosa', 'topic_dailydialog']
 tasks_dict = {'trecquestion': 'TREC',
               'dialoguenli': 'DNLI',
               'multi_woz': 'MWOZ',
