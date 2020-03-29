@@ -129,12 +129,12 @@ def _eval_single_world(opt, agent, task):
             warnings.warn(f"\nSave file already exists at {save_path}!!\n"
                           "Do you wish to overwrite? (y/n)", RuntimeWarning)
 
-            while True:
-                overwrite = input('Overwrite? (y/n)')
-                if overwrite == 'n':
-                    exit('User terminated')
-                elif overwrite == 'y':
-                    break
+            # while True:
+            #     overwrite = input('Overwrite? (y/n)')
+            #     if overwrite == 'n':
+            #         exit('User terminated')
+            #     elif overwrite == 'y':
+            #         break
 
         print("*" * 10, "\n", "*" * 10)
         print(f"Creating pickle file to save {task_name} probing outputs at {save_path}")
