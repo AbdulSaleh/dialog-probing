@@ -228,7 +228,7 @@ class TorchGeneratorModel(nn.Module, ABC):
         encoder_states = prev_enc if prev_enc is not None else self.encoder(*xs)
 
         if decoder_outputs:
-            # ONLY for probing
+            # ONLY for probing decoder
             decoder_outs = self.decode_forced(encoder_states, ys, decoder_outputs=True)
             return decoder_outs
         else:
@@ -861,12 +861,14 @@ class TorchGeneratorAgent(TorchAgent):
             # masked: [batch size, max seq len, embedding size]
             masked = enc_outputs * mask.float().unsqueeze(2)
             # utterance_embeddings: [batch size, embedding size]
-            # utterance_embeddings = masked.sum(dim=1) / text_lengths
-            avg_embeddings = masked.sum(dim=1) / text_lengths
+            utterance_embeddings = masked.sum(dim=1) / text_lengths
+            # avg_embeddings = masked.sum(dim=1) / text_lengths
             # min_embeddings = masked.min(dim=1).values
             # max_embeddings = masked.max(dim=1).values
             # utterance_embeddings = torch.cat((avg_embeddings, min_embeddings, max_embeddings), dim=1)
-            utterance_embeddings = avg_embeddings
+
+            # utterance_embeddings = avg_embeddings
+
             utterance_embeddings = utterance_embeddings.cpu().numpy()
 
         return utterance_embeddings

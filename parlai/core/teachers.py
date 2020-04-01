@@ -1253,7 +1253,7 @@ class ParlAIDialogTeacher(FixedDialogTeacher):
         except UnicodeDecodeError:
             read = open(path, encoding='utf-8')
 
-        if self.opt['probe']:
+        if self.opt.get('probe', False):
             # When probing, read all history as one observation
             for line in read:
                 line = line.rstrip('\n')
