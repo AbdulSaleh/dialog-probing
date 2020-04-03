@@ -90,7 +90,7 @@ for module in modules:
             try:
                 acc = full_results[model][module][task]
             except KeyError:
-                continue
+                acc = 0
             row = row + '{:0.1f}  '.format(acc*100)
 
         print(row)
@@ -117,7 +117,7 @@ if args.sheets:
                 try:
                     acc = full_results[model][module][task]
                 except KeyError:
-                    continue
+                    acc = 0
                 row = row + '{:0.1f},'.format(acc*100)
 
             print(row[:-1])
@@ -143,7 +143,7 @@ if args.latex:
                 try:
                     acc = full_results[model][module][task]
                 except KeyError:
-                    continue
+                    acc = 0
                 row = row + '{:0.1f} & '.format(acc*100)
             print(row[:-2] + " \\\\ ")
 
