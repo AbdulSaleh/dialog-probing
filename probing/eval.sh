@@ -16,11 +16,11 @@ do
         then
             if [[ $dir == *'transformer'* ]]
             then
-                continue
-                #m="transformer"
+                m="transformer"
             elif [[ $dir == *'seq2seq_att'* ]]
             then
-                m="seq2seq_att"
+                continue
+                #m="seq2seq_att"
             elif [[ $dir == *'seq2seq'* ]]
             then
                 continue
