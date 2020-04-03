@@ -20,11 +20,12 @@ do
         then
             if [[ $dir == *'seq2seq_att'* ]]
             then
-                modules=("hierarchical_encoder_state" "hierarchical_encoder_embeddings_state")
+                continue
+#                modules=("hierarchical_encoder_state" "hierarchical_encoder_embeddings_state")
             elif [[ $dir == *'transformer'* ]]
             then
-                continue
-                #modules=("encoder_embeddings" "hierarchical_encoder_state" "hierarchical_encoder_embeddings_state")
+#                continue
+                modules=("encoder_embeddings" "hierarchical_encoder_state" "hierarchical_encoder_embeddings_state")
             else
                 continue
             fi
