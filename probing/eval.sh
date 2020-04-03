@@ -7,7 +7,7 @@ CUDA=$2
 
 TASK="parlai.probing_tasks.${TASK_NAME}.agents"
 
-for DATASET in dailydialog wikitext-103
+for DATASET in dailydialog  # wikitext-103
 do
     DIRS=`ls trained/${DATASET}`
     for dir in $DIRS
