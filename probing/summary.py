@@ -1,7 +1,6 @@
 """Script for summarizing and presenting probing results
 """
 
-import os
 import json
 from pathlib import Path
 import argparse
@@ -14,16 +13,15 @@ args = parser.parse_args()
 
 
 project_dir = Path(__file__).resolve().parent.parent
-datasets = ['dailydialog', 'wikitext-103']
-modules = ['encoder_embeddings', 'encoder_state', 'encoder_embeddings_state']
+datasets = ['dailydialog']
+# modules = ['encoder_embeddings', 'encoder_state', 'encoder_embeddings_state']
+modules = ['encoder_embeddings', 'hierarchical_encoder_state', 'hierarchical_encoder_embeddings_state']
 models = ['scratch_seq2seq', 'scratch_seq2seq_within',
           'scratch_seq2seq_att', 'scratch_seq2seq_att_within',
           'scratch_transformer', 'scratch_transformer_within',
-          'large_seq2seq', 'large_seq2seq_att', 'large_transformer',
           'finetuned_seq2seq', 'finetuned_seq2seq_within',
           'finetuned_seq2seq_att', 'finetuned_seq2seq_att_within',
           'finetuned_transformer', 'finetuned_transformer_within']
-
 tasks = ['trecquestion', 'dialoguenli', 'multi_woz', 'dstc8', 'snips',
          'wnli', 'scenariosa', 'topic_dailydialog']
 tasks_dict = {'trecquestion': 'TREC',
@@ -33,8 +31,7 @@ tasks_dict = {'trecquestion': 'TREC',
               'snips': 'SNIPS',
               'wnli': 'WNLI',
               'scenariosa': 'SSA',
-              'topic_dailydialog': 'Topic DD',
-              'ushuffle_dailydialog': 'Shuffle DD'}
+              'topic_dailydialog': 'Topic DD'}
 full_results = {}
 # tasks = set()
 for dataset in datasets:

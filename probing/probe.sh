@@ -23,7 +23,8 @@ do
                 modules=("hierarchical_encoder_state" "hierarchical_encoder_embeddings_state")
             elif [[ $dir == *'transformer'* ]]
             then
-                modules=("encoder_embeddings" "hierarchical_encoder_state" "hierarchical_encoder_embeddings_state")
+                continue
+                #modules=("encoder_embeddings" "hierarchical_encoder_state" "hierarchical_encoder_embeddings_state")
             else
                 continue
             fi
