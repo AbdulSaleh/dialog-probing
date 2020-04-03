@@ -38,7 +38,8 @@ def setup_args(parser=None):
 
     # Probing command line arguments
     parser.add_argument('--probe', type=str, default=None,
-                        choices=['encoder_state', 'encoder_embeddings', 'encoder_embeddings_state'])
+                        choices=['encoder_state', 'encoder_embeddings', 'encoder_embeddings_state',
+                                 'hierarchical_encoder_state', 'hierarchical_encoder_embeddings_state'])
 
     # Other command line arguments
     parser.add_argument('-ne', '--num-examples', type=int, default=-1)

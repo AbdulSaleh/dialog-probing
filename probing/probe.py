@@ -25,7 +25,8 @@ def setup_args():
                         help='Usage: -t trecquestion\nOnly compatible with names in probing_tasks')
     parser.add_argument('-p', '--probing-module', type=str, default='',
                         choices=['', 'encoder_state', 'encoder_embeddings', 'encoder_embeddings_state',
-                                 'all', 'decoder_state', 'encoder_decoder_embeddings'])
+                                 'all', 'decoder_state', 'encoder_decoder_embeddings', 'hierarchical_encoder_state',
+                                 'hierarchical_encoder_embeddings_state'])
     parser.add_argument('-m', '--model', type=str, required=True,
                         help='Usage: -m GloVe or -m dailydialg\default_transformer\n'
                              'Model directory of embeddings to be probed.'
@@ -34,7 +35,6 @@ def setup_args():
     parser.add_argument('-r', '--runs', type=int, default=1,
                         help='Number of times to train MLP with new random inits each time.\n'
                              'Required for creating confidence intervals')
-
     parser.add_argument('-ep', '--max_epochs', type=int, default=100)
     parser.add_argument('-bs', '--batch_size', type=int, default=128)
 
