@@ -180,11 +180,13 @@ if __name__ == '__main__':
     # Calculate confidence intervals
     results_path = probing_dir.joinpath('results.json')
     mean = np.mean(test_acc_list)
-    std = np.std(test_acc_list)
+    stddev = np.std(test_acc_list)
+    stderr = stddev / runs
     results = {'mean': mean,
-               'lower': mean - 2 * std,
-               'upper': mean + 2 * std,
-               'std': std}
+               'lower': mean - 2 * stderr,
+               'upper': mean + 2 * stderr,
+               'stddev': stddev,
+               'stderr': stderr}
     print(results)
     json.dump(results, open(results_path, 'w'))
 

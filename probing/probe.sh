@@ -18,31 +18,13 @@ do
     do
         if [ $dir != 'old' ]
         then
-            if [[ $dir == *'seq2seq_att'* ]]
-            then
-                continue
-#                modules=("hierarchical_encoder_state" "hierarchical_encoder_embeddings_state")
-            elif [[ $dir == *'transformer'* ]]
-            then
-#                continue
-                modules=("hierarchical_encoder_embeddings_state")
-            else
-                continue
-            fi
-
-            for MODULE in "${modules[@]}"
-            do
+           for MODULE in encoder_embeddings encoder_state encoder_embeddings_state
+           do
                 m="${DATASET}/${dir}"
                 command="CUDA_VISIBLE_DEVICES=${CUDA} python probing/probe.py -t ${TASK_NAME} -p ${MODULE} -m ${m} -ep ${EPOCHS} -r ${RUNS} -bs ${BATCHSIZE} -lr ${LR} -hidden ${HIDDEN}"
                 eval "$command"
-            done
-#           for MODULE in encoder_embeddings encoder_state encoder_embeddings_state
-#           do
-#                m="${DATASET}/${dir}"
-#                command="CUDA_VISIBLE_DEVICES=${CUDA} python probing/probe.py -t ${TASK_NAME} -p ${MODULE} -m ${m} -ep ${EPOCHS} -r ${RUNS} -bs ${BATCHSIZE} -lr ${LR} -hidden ${HIDDEN}"
-#                eval "$command"
-##                echo "$command"
-#           done
+#                echo "$command"
+           done
          fi
     done
 done

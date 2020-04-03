@@ -111,7 +111,10 @@ if args.sheets:
             # row = model + " " * (len(header.split('\t')[0]) - len(model)) + "\t"
             row = ''
             for task in tasks:
-                acc = full_results[model][module][task]
+                try:
+                    acc = full_results[model][module][task]
+                except KeyError:
+                    continue
                 row = row + '{:0.1f},'.format(acc*100)
 
             print(row[:-1])
