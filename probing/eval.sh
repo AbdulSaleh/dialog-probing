@@ -16,13 +16,15 @@ do
         then
             if [[ $dir == *'transformer'* ]]
             then
-                m="transformer"
+                continue
+                #m="transformer"
             elif [[ $dir == *'seq2seq_att'* ]]
             then
                 m="seq2seq_att"
             elif [[ $dir == *'seq2seq'* ]]
             then
-                m="seq2seq"
+                continue
+                #m="seq2seq"
             fi
 
             if [[ $dir == *'large'* ]] || [[ $dir == *'finetuned'* ]]
@@ -31,7 +33,8 @@ do
             else
                 BATCH=1400
             fi
-            for MODULE in encoder_embeddings encoder_state encoder_embeddings_state
+            #for MODULE in encoder_embeddings encoder_state encoder_embeddings_state
+            for MODULE in hierarchical_encoder_state hierarchical_encoder_embeddings_state
             do
                 mf="trained/${DATASET}/${dir}/${m}"
                 command="CUDA_VISIBLE_DEVICES=${CUDA} python examples/eval_model.py -t ${TASK} -mf ${mf} --batchsize ${BATCH} --probe ${MODULE}"
