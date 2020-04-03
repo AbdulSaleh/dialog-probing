@@ -34,7 +34,7 @@ do
                 BATCH=1400
             fi
             #for MODULE in encoder_embeddings encoder_state encoder_embeddings_state
-            for MODULE in hierarchical_encoder_state hierarchical_encoder_embeddings_state
+            for MODULE in encoder_embeddings hierarchical_encoder_state hierarchical_encoder_embeddings_state
             do
                 mf="trained/${DATASET}/${dir}/${m}"
                 command="CUDA_VISIBLE_DEVICES=${CUDA} python examples/eval_model.py -t ${TASK} -mf ${mf} --batchsize ${BATCH} --probe ${MODULE}"
