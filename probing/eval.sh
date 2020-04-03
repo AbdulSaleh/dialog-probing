@@ -29,9 +29,9 @@ do
 
             if [[ $dir == *'large'* ]] || [[ $dir == *'finetuned'* ]]
             then
-                BATCH=700
+                BATCH=500
             else
-                BATCH=1400
+                BATCH=1000
             fi
             #for MODULE in encoder_embeddings encoder_state encoder_embeddings_state
             for MODULE in encoder_embeddings hierarchical_encoder_state hierarchical_encoder_embeddings_state

@@ -11,7 +11,7 @@ RUNS=$7
 
 task="parlai.probing_tasks.${TASK_NAME}.agents"
 
-for DATASET in dailydialog wikitext-103
+for DATASET in dailydialog #wikitext-103
 do
     dirs=`ls trained/${DATASET}`
     for dir in $dirs
@@ -29,6 +29,7 @@ do
         fi
     done
 done
-command="CUDA_VISIBLE_DEVICES=${CUDA} python probing/probe.py -t ${TASK_NAME} -m GloVe -ep ${EPOCHS} -r ${RUNS} -bs ${BATCHSIZE} -lr ${LR} -hidden ${HIDDEN}"
-eval "$command"
+
+#command="CUDA_VISIBLE_DEVICES=${CUDA} python probing/probe.py -t ${TASK_NAME} -m GloVe -ep ${EPOCHS} -r ${RUNS} -bs ${BATCHSIZE} -lr ${LR} -hidden ${HIDDEN}"
+#eval "$command"
 #echo "$command"
