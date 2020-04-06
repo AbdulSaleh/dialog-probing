@@ -88,10 +88,10 @@ for module in modules:
         row = model + " " * (len(header.split('\t')[0]) - len(model)) + "\t"
         for task in tasks:
             try:
-                acc = full_results[model][module][task]
+                acc = full_results[model][module][task]*100
             except KeyError:
-                acc = 0
-            row = row + '{:0.1f}  '.format(acc*100)
+                acc = -1
+            row = row + '{:0.1f}  '.format(acc*)
 
         print(row)
 
@@ -115,10 +115,10 @@ if args.sheets:
             row = ''
             for task in tasks:
                 try:
-                    acc = full_results[model][module][task]
+                    acc = full_results[model][module][task]*100
                 except KeyError:
-                    acc = 0
-                row = row + '{:0.1f},'.format(acc*100)
+                    acc = -1
+                row = row + '{:0.1f},'.format(acc)
 
             print(row[:-1])
 
@@ -141,9 +141,9 @@ if args.latex:
             row = model + " " * (len(header.split('\t')[0]) - len(model)) + "\t" + '&'
             for task in tasks:
                 try:
-                    acc = full_results[model][module][task]
+                    acc = full_results[model][module][task]*100
                 except KeyError:
-                    acc = 0
-                row = row + '{:0.1f} & '.format(acc*100)
+                    acc = -1
+                row = row + '{:0.1f} & '.format(acc)
             print(row[:-2] + " \\\\ ")
 
