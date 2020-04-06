@@ -19,7 +19,7 @@ do
         if [ $dir != 'old' ]
         then
 
-        if [[ $dir != *'smaller_scratch_transformer'* ]]
+        if [[ $dir != *'scratch_transformer'* ]]
             then
                 continue
         fi
