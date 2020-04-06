@@ -14,7 +14,7 @@ do
     do
         if [[ $dir != 'old' ]]
         then
-            if [[ $dir == *'smaller_scratch_transformer'* ]]
+            if [[ $dir == 'smaller_scratch_transformer' ]]
             then
                 m="transformer"
             elif [[ $dir == *'seq2seq_att'* ]]
@@ -33,6 +33,7 @@ do
             else
                 BATCH=1000
             fi
+
             #for MODULE in encoder_embeddings encoder_state encoder_embeddings_state
             for MODULE in encoder_embeddings hierarchical_encoder_state hierarchical_encoder_embeddings_state
             do
