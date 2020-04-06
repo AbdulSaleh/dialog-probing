@@ -17,15 +17,19 @@ do
             if [[ $dir == 'smaller_scratch_transformer' ]]
             then
                 m="transformer"
-            elif [[ $dir == *'seq2seq_att'* ]]
-            then
+            else
                 continue
-                #m="seq2seq_att"
-            elif [[ $dir == *'seq2seq'* ]]
-            then
-                continue
-                #m="seq2seq"
             fi
+
+#            elif [[ $dir == *'seq2seq_att'* ]]
+#            then
+#                continue
+#                #m="seq2seq_att"
+#            elif [[ $dir == *'seq2seq'* ]]
+#            then
+#                continue
+#                #m="seq2seq"
+#            fi
 
             if [[ $dir == *'large'* ]] || [[ $dir == *'finetuned'* ]]
             then
