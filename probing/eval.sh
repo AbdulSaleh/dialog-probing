@@ -14,7 +14,7 @@ do
     do
         if [[ $dir != 'old' ]]
         then
-            if [[ $dir == *'transformer'* ]]
+            if [[ $dir == *'smaller_scratch_transformer'* ]]
             then
                 m="transformer"
             elif [[ $dir == *'seq2seq_att'* ]]
@@ -38,7 +38,7 @@ do
             do
                 mf="trained/${DATASET}/${dir}/${m}"
                 command="CUDA_VISIBLE_DEVICES=${CUDA} python examples/eval_model.py -t ${TASK} -mf ${mf} --batchsize ${BATCH} --probe ${MODULE}"
-        #        echo $command
+                echo $command
                 eval "$command"
             done
         fi
