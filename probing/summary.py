@@ -91,7 +91,7 @@ for module in modules:
                 acc = full_results[model][module][task]*100
             except KeyError:
                 acc = -1
-            row = row + '{:0.1f}  '.format(acc*)
+            row = row + '{:0.1f}  '.format(acc)
 
         print(row)
 
