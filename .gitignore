@@ -297,4 +297,4 @@ heroku-cli-*
 # VSCode
 *.vscode
 
-probing/probing_tasks/legacy/*
+./probing/probing_tasks/legacy
