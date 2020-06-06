@@ -87,8 +87,3 @@ def build(opt):
 
         # mark the data as built
         build_data.mark_done(dpath)
-
-
-if __name__ == '__main__':
-    opt = {'datapath': 'C:/Users/Abdul/Workspace/media_lab/dialog-probing/data/'}
-    build(opt)
