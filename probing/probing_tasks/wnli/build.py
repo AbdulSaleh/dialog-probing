@@ -1,3 +1,5 @@
+# Download and build the data if it does not exist.
+
 import os
 import csv
 import pickle
@@ -60,11 +62,8 @@ def build(opt):
               'o/data%2FWNLI.zip?alt=media&token=068ad0a0-ded7-4bd7-99a5-5e00222e0faf'
         build_data.download(url, dpath, fname)
 
-        zip_path = os.path.join(dpath, fname)
-        with zipfile.ZipFile(zip_path, 'r') as f:
-            f.extractall(dpath)
+        build_data.unzip(dpath, fname)
 
-        os.remove(zip_path)
         orig_dpath = os.path.join(dpath, 'wnli_orig')
         os.rename(os.path.join(dpath, 'WNLI'), orig_dpath)
 
@@ -73,5 +72,3 @@ def build(opt):
 
         # mark the data as built
         build_data.mark_done(dpath)
-
-

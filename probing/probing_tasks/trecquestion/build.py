@@ -1,3 +1,5 @@
+# Download and build the data if it does not exist.
+
 import os
 import pickle
 from pathlib import Path
