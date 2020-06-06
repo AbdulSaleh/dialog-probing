@@ -65,15 +65,13 @@ def build(opt):
             f.extractall(dpath)
 
         os.remove(zip_path)
-        os.rename(os.path.join(dpath, 'WNLI'), os.path.join(dpath, 'wnli_orig'))
+        orig_dpath = os.path.join(dpath, 'wnli_orig')
+        os.rename(os.path.join(dpath, 'WNLI'), orig_dpath)
 
         # Process the data
-        create_probing_format(Path(dpath, 'wnli_orig'))
+        create_probing_format(Path(orig_dpath))
 
         # mark the data as built
         build_data.mark_done(dpath)
 
 
-if __name__ == '__main__':
-    opt = {'datapath': 'C:/Users/Abdul/Workspace/media_lab/dialog-probing/data/'}
-    build(opt)
