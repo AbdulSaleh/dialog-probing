@@ -297,19 +297,4 @@ heroku-cli-*
 # VSCode
 *.vscode
 
-
-###############################          torchMoji submodule            ###############################
-
-# pyTorch model
-pytorch_model.bin
-
-###############################          inferSent submodule            ###############################
-# datasets
-inferSent/dataset/SNLI/
-inferSent/dataset/MultiNLI/
-inferSent/dataset/AllNLI/
-inferSent/dataset/GloVe
-inferSent/dataset/fastText
-
-###############################          dataset augmentation           ###############################
-models
+probing/probing_tasks/legacy/*
