@@ -6,18 +6,18 @@ from pathlib import Path
 import parlai.core.build_data as build_data
 
 
-def create_probing_format(data_dir):
+def create_probing_format(orig_dpath):
     # Load raw data
-    train_path = data_dir.joinpath('train.tsv')
-    dev_path = data_dir.joinpath('dev.tsv')
+    train_path = orig_dpath.joinpath('train.tsv')
+    dev_path = orig_dpath.joinpath('dev.tsv')
 
     train_data = csv.DictReader(open(train_path, 'r'), dialect='excel-tab')
     dev_data = csv.DictReader(open(dev_path, 'r'), dialect='excel-tab')
 
     # Save files
-    question_path = data_dir.parent.joinpath('wnli.txt')
-    label_path = data_dir.parent.joinpath('labels.txt')
-    info_path = data_dir.parent.joinpath('info.pkl')
+    question_path = orig_dpath.parent.joinpath('wnli.txt')
+    label_path = orig_dpath.parent.joinpath('labels.txt')
+    info_path = orig_dpath.parent.joinpath('info.pkl')
 
     question_file = open(question_path, 'w')
     label_file = open(label_path, 'w')

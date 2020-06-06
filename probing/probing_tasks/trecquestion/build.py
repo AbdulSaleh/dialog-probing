@@ -4,18 +4,18 @@ from pathlib import Path
 import parlai.core.build_data as build_data
 
 
-def create_probing_format(data_dir):
-    train_path = data_dir.joinpath('train.txt')
-    test_path = data_dir.joinpath('test.txt')
+def create_probing_format(orig_dpath):
+    train_path = orig_dpath.joinpath('train.txt')
+    test_path = orig_dpath.joinpath('test.txt')
 
     train = open(train_path, 'r', encoding='ISO-8859-1').readlines()
     test = open(test_path, 'r', encoding='ISO-8859-1').readlines()
     data = train + test
 
     # Save files
-    question_path = data_dir.parent.joinpath('trecquestion.txt')
-    label_path = data_dir.parent.joinpath('labels.txt')
-    info_path = data_dir.parent.joinpath('info.pkl')
+    question_path = orig_dpath.parent.joinpath('trecquestion.txt')
+    label_path = orig_dpath.parent.joinpath('labels.txt')
+    info_path = orig_dpath.parent.joinpath('info.pkl')
 
     question_file = open(question_path, 'w')
     label_file = open(label_path, 'w')
