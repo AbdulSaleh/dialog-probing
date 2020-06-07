@@ -88,10 +88,12 @@ example usage: `bash probing/probe.sh wnli 1 150`
 ### Creating new probing tasks
 New probing tasks need to be in the format
 
-```text: <utterance1> \n
+```
+text: <utterance1> \n
 <utterance2> \t episode_done:True \n  
 text: <utterance1> \n
 <utterance2> \n
-<utterance3> \t episode_done:True \n  
+<utterance3> \t episode_done:True \n 
+... 
 ```
 
