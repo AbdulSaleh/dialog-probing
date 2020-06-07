@@ -86,8 +86,7 @@ example usage: `bash probing/probe.sh wnli 1 150`
 ```python ParlAI/parlai/zoo/glove_vectors/build.py```
 
 ### Creating new probing tasks
-New probing tasks need to be in the format
-
+New probing tasks need to be in the following format:
 ```
 text: <utterance1> \n
 <utterance2> \t episode_done:True \n  
@@ -96,4 +95,10 @@ text: <utterance1> \n
 <utterance3> \t episode_done:True \n 
 ... 
 ```
+The code is best suited for tasks where the label is based on:
+* all utterances in a dialog (like DailyDialog Topic)
+* or the interaction between two utterances (like DialogueNLI)
+* or the last utterance in a dialog (like ScenarioSA)
+
+See section [3.2]() in the paper for more info. 
 
