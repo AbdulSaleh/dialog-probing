@@ -1,8 +1,6 @@
 import os
 import pickle
-import json
 import random
-import rarfile
 from pathlib import Path
 import parlai.core.build_data as build_data
 
@@ -48,7 +46,7 @@ def create_probing_format(orig_dpath):
         if sents[selected_turn] == 'neu':
             selected_turn = random.choice(range(len(utts)))
 
-        text = 'text:' + '\n'.join(utts[:selected_turn + 1]) + '\tlabels:\tepisode_done:True\n'
+        text = 'text:' + '\n'.join(utts[:selected_turn + 1]) + '\tepisode_done:True\n'
         if sents[selected_turn] == 'pos':
             examples.append(['pos' + '\n', text])
             n_pos += 1
