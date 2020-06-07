@@ -23,10 +23,9 @@ def create_probing_format(orig_dpath):
     n_neg = 0
     n_neu = 0
 
-    dialogs_dir = orig_dpath.joinpath('InteractiveSentimentDataset')
     examples = []
-    for filename in os.listdir(dialogs_dir):
-        with open(dialogs_dir.joinpath(filename), 'r', encoding='cp1252') as f:
+    for filename in os.listdir(orig_dpath):
+        with open(orig_dpath.joinpath(filename), 'r', encoding='cp1252') as f:
             example = f.readlines()
         utts = []
         sents = []
@@ -85,8 +84,8 @@ def build(opt):
 
         build_data.make_dir(dpath)
 
-        fname = 'scenriosa_orig.zip'
-        url = 'https://www.dropbox.com/sh/hz7lvr2hniwg9uq/AACB2aNOqarKNUHQGj6AN0Uva?dl=1'
+        fname = 'ScenarioSA.zip'
+        url = 'https://www.dropbox.com/s/h54k6oamrn4gizg/ScenarioSA.zip?dl=1'
         build_data.download(url, dpath, fname)
         build_data.unzip(dpath, fname)
 
@@ -97,7 +96,3 @@ def build(opt):
 
         # mark the data as built
         build_data.mark_done(dpath)
-
-if __name__ == '__main__':
-    opt = {'datapath': 'C:/Users/Abdul/Workspace/media_lab/dialog-probing/data/'}
-    build(opt)
