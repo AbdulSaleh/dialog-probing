@@ -34,7 +34,6 @@ python examples/train_model.py  -t dailydialog -m seq2seq -att general --bidirec
 ### Daily Dialog Seq2Seq + Attention lstm, ~9M parameters:
 python examples/train_model.py -t dailydialog -m transformer/generator -bs 64 --optimizer adam -lr 0.001 --lr-scheduler invsqrt --warmup-updates 4000 -eps 35 -veps 1 --embedding-size 300 --n-heads 3 -tr 300 -mf trained/dailydialog/small_default_transformer/transformer --display-examples True -ltim 30 --tensorboard_log True --save-after-valid True --embedding-type glove --validation-metric ppl
 
-
 ## Probing experiments
 
 For all of the following commands, replace \<TASK\> with whatever task name you want to probe for. The task names are listed below.
@@ -85,4 +84,14 @@ example usage: `bash probing/probe.sh wnli 1 150`
  Download GloVe Embeddings by running 
  
 ```python ParlAI/parlai/zoo/glove_vectors/build.py```
+
+### Creating new probing tasks
+New probing tasks need to be in the format
+
+```text: <utterance1> \n
+<utterance2> \t episode_done:True \n  
+text: <utterance1> \n
+<utterance2> \n
+<utterance3> \t episode_done:True \n  
+```
 
