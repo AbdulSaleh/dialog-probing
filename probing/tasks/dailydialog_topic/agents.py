@@ -17,7 +17,7 @@ def _path(opt):
     return os.path.join(
         opt['datapath'],
         'probing',
-        'topic_dailydialog',
+        'dailydialog_topic',
         'dialogs.txt')
 
 
