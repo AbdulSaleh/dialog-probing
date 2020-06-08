@@ -85,5 +85,7 @@ def build(opt):
 
 
 if __name__ == '__main__':
-    opt = {'datapath': 'C:/Users/Abdul/Workspace/media_lab/dialog-probing/data/'}
+    project_dir = Path(__file__).resolve().parent.parent.parent.parent
+    datapath = project_dir.joinpath('data')
+    opt = {'datapath': str(datapath)}
     build(opt)
