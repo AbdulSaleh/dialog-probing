@@ -9,36 +9,54 @@ Probing evaluates the quality of internal model representations for conversation
 Follow same installation instructions as [ParlAI](https://github.com/facebookresearch/ParlAI/tree/d510bc2e10633d5204e1957a6c98cf30aa1be10d). ParlAI requires Python 3 and PyTorch 1.1 or newer. 
 You will also need to install [skorch](https://github.com/skorch-dev/skorch/tree/14f374db158ec7a7f4770a2fa9b02b8016d2d6ff) 0.6 which is required by the probing classifier.  
 
-## Examples
+## Example Usage
 
 This section takes you through an example of how you would train and probe a dialog model. 
 
+1. You will first need a model to probe. Let's train a small RNN on the DailyDialog dataset:
 
+```
+python examples/train_model.py  -t dailydialog -m seq2seq --bidirectional true --numlayers 2 --hiddensize 256 --embeddingsize 128 
+-eps 60 -veps 1 -vp 10 -bs 32 --optimizer adam --lr-scheduler invsqrt -lr 0.005 --dropout 0.3 --warmup-updates 4000 -tr 300 
+-mf trained/dailydialog/seq2seq/seq2seq --display-examples True -ltim 30 --tensorboard_log True --validation-metric ppl
+```
 
-## Code Organization
+To train on perturbed (i.e. shuffled) data, add the flag ``-sh within``. See ParlAI's [documentation](http://parl.ai.s3-website.us-east-2.amazonaws.com/docs/index.html) for more information about training dialog models. 
 
-Most of the code for this study exists within the [**probing**](./probing) directory. 
+2. You will then generate and save the vector representations to be used as features by the probing classifier. 
+Let's generate and save the ``encoder_state`` vectors for the TREC question classification task:
 
-We also augmented the RNN and Transformer modules in [**agents**](./parlai/agents) with probing functions to extract their internal representations. 
- 
+```
+python probing/probe_model.py -mf trained/dailydialog/seq2seq/seq2seq -t trecquestion --probe encoder_state 
+```
+This will automatically download the required task data and save the generated representations at ``trained/dailydialog/seq2seq/probing/encoder_state/trecquestion``.
 
-Run the code below to train the dialog models. You can add `-sh within` flag to train models on dialogs where the order of utterances is shuffled within conversations. 
+3. Now you can run the probing classifier to evaluate the quality of the generated representations by running:
 
+```
+python probing/eval_probing.py -m trained/dailydialog/seq2seq -t trecquestion --probing-module encoder_state --max_epochs 50 --runs 30
+```
+This trains the probing classifier (an MLP) on the generated representations. The final results are saved at ``trained/dailydialog/seq2seq/probing/encoder_state/trecquestion/results.json``. 
 
-### Daily Dialog RNN LSTM, ~20M parameters:
-python examples/train_model.py  -t dailydialog -m seq2seq --bidirectional true --numlayers 2 --hiddensize 256 --embeddingsize 300  -eps 60 -veps 1 -vp 10 -bs 64 --optimizer adam --lr-scheduler invsqrt -lr 0.005 --dropout 0.3 --warmup-updates 4000 -tr 300 -mf trained/dailydialog/default_seq2seq/seq2seq --display-examples True -ltim 30 --tensorboard_log True --save-after-valid True --embedding-type glove --validation-metric ppl
+### Baselines
 
-### Daily Dialog Seq2Seq + Attention lstm, ~20M parameters:
-python examples/train_model.py  -t dailydialog -m seq2seq -att general --bidirectional true --numlayers 2 --hiddensize 256 --embeddingsize 300  -eps 60 -veps 1 -vp 10  -bs 64 --optimizer adam --lr-scheduler invsqrt -lr 0.005 --dropout 0.3 --warmup-updates 4000 -tr 300 -mf trained/dailydialog/default_seq2seq_att/seq2seq_att --display-examples True --tensorboard_log True --save-after-valid True --embedding-type glove --validation-metric ppl
+1. You might also want to generate the GloVe word embedding baselines. You can do this by running:
 
-### Daily Dialog Seq2Seq + Attention lstm, ~9M parameters:
-python examples/train_model.py -t dailydialog -m transformer/generator -bs 64 --optimizer adam -lr 0.001 --lr-scheduler invsqrt --warmup-updates 4000 -eps 35 -veps 1 --embedding-size 300 --n-heads 3 -tr 300 -mf trained/dailydialog/small_default_transformer/transformer --display-examples True -ltim 30 --tensorboard_log True --save-after-valid True --embedding-type glove --validation-metric ppl
+```
+python probing/glove.py -t trecquestion
+```
+This will automatically download the GloVe embeddings and save the generated representations to ``trained/GloVe/probing/trecquestion``
 
-## Probing experiments
+2. Now you need to run the probing classifier on these generated representations using:
 
-For all of the following commands, replace \<TASK\> with whatever task name you want to probe for. The task names are listed below.
+```
+python probing/eval_probing.py -m GloVe -t trecquestion --max_epochs 50 --runs 30
+```
 
-* trecquestion
+## Probing tasks
+The supported probing tasks are:
+
+* trecquestion 
 * multiwoz
 * sgd
 * dialoguenli
@@ -46,44 +64,6 @@ For all of the following commands, replace \<TASK\> with whatever task name you 
 * snips
 * scenariosa
 * dailydialog_topic
-
-
-### Generate GloVe embeddings for probing
-```python probing/glove.py -t <TASK>```
-
-or, for generating embeddings for multiple tasks at once:
-
-```python probing/glove.py -t trecquestion wnli multinli```
-
-### Generate embeddings probed from models
-```
-python examples/eval_model.py  -mf trained/dailydialog/seq2seq/seq2seq.checkpoint -t parlai.probing_tasks.<TASK>.agents --batchsize 128 --probe True
-```
-
-This generates state vectors to probe all the models in trained/dailydialog/:
-```bash probing/eval.sh <TASK> CUDA_DEVICE BATCHSIZE```
-
-example usage: `bash probing/eval.sh wnli 1 128`
-
-### Evaluate probing tasks
-
-```python probing/probe.py -t <TASK> -m dailydialog/transformer -ep 200```
-
-or, for evaluating using the GloVe embeddings
-
-```python probing/probe.py -t <TASK> -m GloVe -ep 200```
-
-This evaluates all the embeddings for models in in trained/dailydialog:
-
-```bash probing/probe.sh TASK CUDA_DEVICE EPOCHS```
-
-example usage: `bash probing/probe.sh wnli 1 150`
-
-
-## Baselines
- Download GloVe Embeddings by running 
- 
-```python ParlAI/parlai/zoo/glove_vectors/build.py```
 
 ### Adding new probing tasks
 New probing tasks need to be in the following format:
@@ -104,6 +84,15 @@ The code is best suited for tasks where the label is based on:
 * or the last utterance in a dialog (like ScenarioSA)
 
 See section [3.2]() in the paper for more info. 
+
+
+## Code Organization
+
+Most of the code for this study exists within the [**probing**](./probing) directory. 
+
+We also augmented [torch_generator_agent.py](./parlai/core/torch_generator_agent.py) with probing functions that extract a model's internal representations. 
+
+[//]: # (We also augmented the RNN and Transformer modules in [**agents**](./parlai/agents) with probing functions to extract their internal representations.)  
 
 
 ## Reference
