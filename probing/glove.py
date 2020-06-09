@@ -1,10 +1,13 @@
 """Generate bag of vectors representation for a given probing task."""
+import os
+import argparse
 import pickle
 import json
-import argparse
-from pathlib import Path
 import csv
+import zipfile
+from pathlib import Path
 from itertools import chain
+import urllib.request
 import numpy as np
 from probing.utils import load_glove, encode_glove
 
@@ -36,9 +39,9 @@ def process_task(task_name, save_dir, glove):
     # Load and process data depending on task
     print(f'Loading {task_name} data!')
     if task_name == 'trecquestion':
-        data_dir = Path(project_dir, 'data', 'probing', 'trecquestion')
-        train_path = data_dir.joinpath('train_5500.label')
-        test_path = data_dir.joinpath('TREC_10.label')
+        data_dir = Path(project_dir, 'data', 'probing', 'trecquestion', 'trecquestion_orig')
+        train_path = data_dir.joinpath('train.txt')
+        test_path = data_dir.joinpath('test.txt')
 
         train = open(train_path, 'r', encoding='ISO-8859-1').readlines()
         test = open(test_path, 'r', encoding='ISO-8859-1').readlines()
@@ -48,7 +51,7 @@ def process_task(task_name, save_dir, glove):
         embeddings = encode_glove(questions, glove, dict=dict)
 
     elif task_name == 'wnli':
-        data_dir = Path(project_dir, 'data', 'probing', 'wnli')
+        data_dir = Path(project_dir, 'data', 'probing', 'wnli', 'wnli_orig')
         train_path = data_dir.joinpath('train.tsv')
         dev_path = data_dir.joinpath('dev.tsv')
 
@@ -62,40 +65,15 @@ def process_task(task_name, save_dir, glove):
         sent2 = encode_glove(sent2, glove, dict=dict)
         embeddings = np.hstack((sent1, sent2))
 
-    elif task_name == 'multinli':
-        MULTINLI_PREMISE_KEY = 'sentence1'
-        MULTINLI_HYPO_KEY = 'sentence2'
-
-        data_dir = Path(project_dir, 'data', 'probing', 'multinli')
-        train_path = data_dir.joinpath('multinli_1.0_train.jsonl')
-        dev_path = data_dir.joinpath('multinli_1.0_dev_matched.jsonl')
-        test_path = data_dir.joinpath('multinli_1.0_dev_mismatched.jsonl')
-
-        train = [json.loads(l) for l in open(train_path)]
-        dev = [json.loads(l) for l in open(dev_path)]
-        test = [json.loads(l) for l in open(test_path)]
-        data = train + dev + test
-
-        premises = []
-        hypos = []
-        for line in data:
-            premise = line[MULTINLI_PREMISE_KEY]
-            hypo = line[MULTINLI_HYPO_KEY]
-            premises.append(premise)
-            hypos.append(hypo)
-        premises = encode_glove(premises, glove, dict=dict)
-        hypos = encode_glove(hypos, glove, dict=dict)
-        embeddings = np.hstack((premises, hypos))
-
     elif task_name == 'snips':
         labels = ['AddToPlaylist', 'BookRestaurant', 'GetWeather', 'PlayMusic',
                   'RateBook', 'SearchCreativeWork', 'SearchScreeningEvent']
 
-        data_dir = Path(project_dir, 'data', 'probing', 'snips')
+        data_dir = Path(project_dir, 'data', 'probing', 'snips', 'snips_orig')
         examples = []
         # Process train
         for label in labels:
-            f_name = data_dir.joinpath(label, 'train_' + label + '_full.json')
+            f_name = data_dir.joinpath(label, 'train.json')
             with open(f_name, encoding='latin-1') as f:
                 dataset = json.load(f)
                 for example in dataset[label]:
@@ -103,7 +81,7 @@ def process_task(task_name, save_dir, glove):
                     examples.append(text)
         # Process test
         for label in labels:
-            f_name = data_dir.joinpath(label, 'validate_' + label + '.json')
+            f_name = data_dir.joinpath(label, 'test.json')
             with open(f_name, encoding='latin-1') as f:
                 dataset = json.load(f)
                 for example in dataset[label]:
@@ -111,85 +89,8 @@ def process_task(task_name, save_dir, glove):
                     examples.append(text)
         embeddings = encode_glove(examples, glove, dict=dict)
 
-    elif task_name == 'ushuffle_dailydialog':
-        # This task is an exception as we load the shuffled and processed
-        # probing data in ParlAI format instead of the raw data.
-        data_dir = Path(project_dir, 'data', 'probing', 'ushuffle_dailydialog')
-        data = open(data_dir.joinpath('shuffled.txt'))
-        history = []
-        current = []
-        for line in data:
-            line = line.rstrip('\n')
-            turn = line.split('\t')[0]
-            if turn.startswith('text:'):
-                # start a new episode
-                episode = []
-                turn = turn[len('text:'):]
-            episode.append(turn)
-
-            if 'episode_done:True' in line:
-                history.append(' '.join(episode))
-                current.append(turn)
-
-        history = encode_glove(history, glove, dict=dict)
-        current = encode_glove(current, glove, dict=dict)
-        embeddings = np.hstack((history, current))
-
-        # dialogs = []
-        # for line in data:
-        #     line = line.rstrip('\n')
-        #     turn = line.split('\t')[0]
-        #     if turn.startswith('text:'):
-        #         # start a new episode
-        #         episode = []
-        #         turn = turn[len('text:'):]
-        #     episode.append(turn)
-        #
-        #     if 'episode_done:True' in line:
-        #         dialogs.append(' '.join(episode))
-        #
-        # embeddings = encode_glove(dialogs, glove, dict=dict)
-
-    elif task_name == 'act_dailydialog':
-        data_dir = Path(project_dir, 'data', 'probing', 'act_dailydialog')
-        data = open(data_dir.joinpath('dialogs.txt'))
-
-        dialogs = []
-        for line in data:
-            line = line.rstrip('\n')
-            turn = line.split('\t')[0]
-            if turn.startswith('text:'):
-                # start a new episode
-                episode = []
-                turn = turn[len('text:'):]
-            episode.append(turn)
-
-            if 'episode_done:True' in line:
-                dialogs.append(' '.join(episode))
-
-        embeddings = encode_glove(dialogs, glove, dict=dict)
-
-    elif task_name == 'sentiment_dailydialog':
-        data_dir = Path(project_dir, 'data', 'probing', 'sentiment_dailydialog')
-        data = open(data_dir.joinpath('dialogs.txt'))
-
-        dialogs = []
-        for line in data:
-            line = line.rstrip('\n')
-            turn = line.split('\t')[0]
-            if turn.startswith('text:'):
-                # start a new episode
-                episode = []
-                turn = turn[len('text:'):]
-            episode.append(turn)
-
-            if 'episode_done:True' in line:
-                dialogs.append(' '.join(episode))
-
-        embeddings = encode_glove(dialogs, glove, dict=dict)
-
-    elif task_name == 'topic_dailydialog':
-        data_dir = Path(project_dir, 'data', 'probing', 'topic_dailydialog')
+    elif task_name == 'dailydialog_topic':
+        data_dir = Path(project_dir, 'data', 'probing', 'dailydialog_topic')
         data = open(data_dir.joinpath('dialogs.txt'))
 
         history = []
@@ -211,27 +112,9 @@ def process_task(task_name, save_dir, glove):
         current = encode_glove(current, glove, dict=dict)
         embeddings = np.hstack((history, current))
 
-        # data_dir = Path(project_dir, 'data', 'probing', 'topic_dailydialog')
-        # data = open(data_dir.joinpath('dialogs.txt'))
-        #
-        # dialogs = []
-        # for line in data:
-        #     line = line.rstrip('\n')
-        #     turn = line.split('\t')[0]
-        #     if turn.startswith('text:'):
-        #         # start a new episode
-        #         episode = []
-        #         turn = turn[len('text:'):]
-        #     episode.append(turn)
-        #
-        #     if 'episode_done:True' in line:
-        #         dialogs.append(' '.join(episode))
-        #
-        # embeddings = encode_glove(dialogs, glove, dict=dict)
-
-    elif task_name == 'multi_woz':
-        data_dir = Path(project_dir, 'data', 'probing', 'multi_woz')
-        data = open(data_dir.joinpath('multi_woz.txt'))
+    elif task_name == 'multiwoz':
+        data_dir = Path(project_dir, 'data', 'probing', 'multiwoz')
+        data = open(data_dir.joinpath('multiwoz.txt'))
 
         history = []
         current = []
@@ -275,9 +158,9 @@ def process_task(task_name, save_dir, glove):
         current = encode_glove(current, glove, dict=dict)
         embeddings = np.hstack((history, current))
 
-    elif task_name == 'dstc8':
-        data_dir = Path(project_dir, 'data', 'probing', 'dstc8')
-        data = open(data_dir.joinpath('dstc8.txt'))
+    elif task_name == 'sgd':
+        data_dir = Path(project_dir, 'data', 'probing', 'sgd')
+        data = open(data_dir.joinpath('sgd.txt'))
 
         history = []
         current = []
@@ -321,25 +204,6 @@ def process_task(task_name, save_dir, glove):
         current = encode_glove(current, glove, dict=dict)
         embeddings = np.hstack((history, current))
 
-    elif task_name == 'squad':
-        data_dir = Path(project_dir, 'data', 'probing', 'squad')
-        data = open(data_dir.joinpath('squad.txt'))
-
-        examples = []
-        for line in data:
-            line = line.rstrip('\n')
-            turn = line.split('\t')[0]
-            if turn.startswith('text:'):
-                # start a new episode
-                episode = []
-                turn = turn[len('text:'):]
-            episode.append(turn)
-
-            if 'episode_done:True' in line:
-                examples.append(' '.join(episode))
-
-        embeddings = encode_glove(examples, glove, dict=dict)
-
     else:
         raise NotImplementedError(f'Probing task: {task_name} not supported')
 
@@ -351,9 +215,27 @@ if __name__ == "__main__":
     opt = setup_args()
 
     project_dir = Path(__file__).resolve().parent.parent
+    glove_dir = project_dir.joinpath('data', 'models', 'glove_vectors')
 
     # Load GloVe
-    glove_path = project_dir.joinpath('data', 'models', 'glove_vectors', 'glove.840B.300d.txt')
+    glove_path = glove_dir.joinpath('glove.840B.300d.txt')
+    if not glove_path.exists():
+        try:
+            glove_dir.mkdir(parents=True)
+        except FileExistsError:
+            pass
+        print('Downloading GloVe embeddings! This might take a few minutes...')
+        zip_path = glove_dir.joinpath('glove.840B.300d.zip')
+        url = 'http://nlp.stanford.edu/data/glove.840B.300d.zip'
+        urllib.request.urlretrieve(url, zip_path)
+        print('Done downloading GloVe!')
+
+        print('Unzipping GloVe embeddings! Just a few more minutes...')
+        with zipfile.ZipFile(zip_path) as f:
+            f.extractall(path=glove_dir)
+        print('Done unzipping Glove!')
+        os.remove(zip_path)
+
     glove = load_glove(glove_path)
 
     # Create save dir for embeddings
