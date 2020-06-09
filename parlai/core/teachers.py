@@ -1262,7 +1262,6 @@ class ParlAIDialogTeacher(FixedDialogTeacher):
                     # Start new episode
                     # episode_done: True since probing sees all episode at once
                     eps = [{'text': turn[len('text:'):],
-                            'labels': [' '],
                             'episode_done':True}]
                 else:
                     # Continue previous episode

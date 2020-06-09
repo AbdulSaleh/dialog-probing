@@ -631,16 +631,12 @@ class TorchGeneratorAgent(TorchAgent):
         self.model.eval()
         cand_scores = None
 
-        if self.opt['probe'] == 'encoder_state':
+        if self.opt['probe'] == 'word_embeddings':
+            embeddings = self.probe_word_embeddings(batch)
+        elif self.opt['probe'] == 'encoder_state':
             embeddings = self.probe_encoder_state(batch)
-        elif self.opt['probe'] == 'hierarchical_encoder_state':
-            embeddings = self.probe_hier_encoder_state(batch)
-        elif self.opt['probe'] == 'encoder_embeddings':
-            embeddings = self.probe_encoder_embeddings(batch)
-        elif self.opt['probe'] == 'encoder_embeddings_state':
-            embeddings = self.probe_encoder_embeddings_state(batch)
-        elif self.opt['probe'] == 'hierarchical_encoder_embeddings_state':
-            embeddings = self.probe_hier_encoder_embeddings_state(batch)
+        elif self.opt['probe'] == 'combined':
+            embeddings = self.probe_combined(batch)
         else:
             raise Exception(f"Input type {self.opt['probe']} not understood.")
 
@@ -786,68 +782,6 @@ class TorchGeneratorAgent(TorchAgent):
 
     def probe_encoder_state(self, batch):
         model = self.model
-        encoder_states = model.encoder(*self._model_input(batch))
-        bsz = len(batch.text_lengths)
-        text_lengths = torch.tensor(batch.text_lengths).float().unsqueeze(1).cuda()
-
-        model_name = type(model).__name__
-        if model_name == 'Seq2seq':
-            # enc_outputs: [batch size, max seq len, hidden dim * 2] ~ since bidirectional
-            # hidden: ([batch size, num layers, hidden dim],
-            #          [batch size, num layers, hidden dim]) ~ (h, c)
-            # mask: [batch size, max seq len]
-            enc_outputs, hidden, mask = encoder_states
-            attention = (model.attn_type != 'none')
-            if attention:
-                # Average encoder outputs h_t.
-                # masked: [batch size, max seq len, hidden dim * 2]
-                masked = enc_outputs * mask.float().unsqueeze(2)
-
-                # _utterance_embeddings: [batch size, hidden dim * 2]
-                _utterance_embeddings = masked.sum(dim=1) / text_lengths
-                # Concat final state c
-                # _utterance_embeddings: [batch size, hidden dim * 2 + hidden dim * num layers]
-                c = hidden[1].reshape(bsz, -1)
-                _utterance_embeddings = torch.cat((_utterance_embeddings, c), dim=1)
-
-                utterance_embeddings = torch.zeros_like(_utterance_embeddings).cuda()
-
-                # Sort embeddings into original order. Undo pack padded sequence
-                for i, j in enumerate(batch['valid_indices']):
-                    utterance_embeddings[j] = _utterance_embeddings[i]
-
-            else:
-                # Use final hidden states (h, c)
-                # hidden: ([batch size, hidden dim * num layers],
-                #          [batch size, hidden dim * num layers])
-                hidden = (hidden[0].reshape(bsz, -1),
-                          hidden[1].reshape(bsz, -1))
-
-                # hidden: [batch size, hidden dim * num layers * 2]
-                hidden = torch.cat(hidden, dim=1)
-
-                # utterance_embeddings: [batch size, hidden dim * num layers * 2]
-                utterance_embeddings = torch.zeros_like(hidden).cuda()
-
-                # Sort embeddings into original order. Undo pack padded sequence
-                for i, j in enumerate(batch['valid_indices']):
-                    utterance_embeddings[j] = hidden[i]
-
-        elif model_name == 'TransformerGeneratorModel':
-            # enc_outputs: [batch size, max seq len, embedding size]
-            # mask: [batch size, max seq len]
-            enc_outputs, mask = encoder_states
-
-            # masked: [batch size, max seq len, embedding size]
-            masked = enc_outputs * mask.float().unsqueeze(2)
-            # utterance_embeddings: [batch size, embedding size]
-            utterance_embeddings = masked.sum(dim=1) / text_lengths
-
-        utterance_embeddings = utterance_embeddings.cpu().numpy()
-        return utterance_embeddings
-
-    def probe_hier_encoder_state(self, batch):
-        model = self.model
         model_name = type(model).__name__
         encoder_states = model.encoder(*self._model_input(batch))
         bsz = batch.text_vec.size(0)
@@ -944,7 +878,7 @@ class TorchGeneratorAgent(TorchAgent):
 
         return utterance_embeddings.cpu().numpy()
 
-    def probe_encoder_embeddings(self, batch):
+    def probe_word_embeddings(self, batch):
         # Get word embeddings for encoder input
         encoder = self.model.encoder
         if type(self.model).__name__ != 'TransformerGeneratorModel':
@@ -1010,16 +944,10 @@ class TorchGeneratorAgent(TorchAgent):
 
         return utterance_embeddings
 
-    def probe_encoder_embeddings_state(self, batch):
-        embeddings = self.probe_encoder_embeddings(batch)
-        states = self.probe_encoder_state(batch)
-        utterance_embeddings = np.hstack((embeddings, states))
-        return utterance_embeddings
-
-    def probe_hier_encoder_embeddings_state(self, batch):
-        embeddings = self.probe_encoder_embeddings(batch)
-        states = self.probe_hier_encoder_state(batch)
-        utterance_embeddings = np.hstack((embeddings, states))
+    def probe_combined(self, batch):
+        word_embeddings = self.probe_word_embeddings(batch)
+        encoder_states = self.probe_encoder_state(batch)
+        utterance_embeddings = np.hstack((word_embeddings, encoder_states))
         return utterance_embeddings
 
 
