@@ -23,14 +23,12 @@ def setup_args():
 
     parser.add_argument('-t', '--task', type=str, required=True,
                         help='Usage: -t trecquestion\nOnly compatible with names in probing_tasks')
-    parser.add_argument('-p', '--probing-module', type=str, default='',
-                        choices=['', 'encoder_state', 'encoder_embeddings', 'encoder_embeddings_state',
-                                 'all', 'decoder_state', 'encoder_decoder_embeddings', 'hierarchical_encoder_state',
-                                 'hierarchical_encoder_embeddings_state'])
+    parser.add_argument('-p', '--probing-module', type=str,
+                        choices=['word_embeddings', 'encoder_state', 'combined'])
+
     parser.add_argument('-m', '--model', type=str, required=True,
-                        help='Usage: -m GloVe or -m dailydialg\default_transformer\n'
-                             'Model directory of embeddings to be probed.'
-                             'Assumes models saved to ParlAI\\trained')
+                        help='Usage: -m GloVe or -m trained\dailydialg\seq2seq\n'
+                             'Model directory of embeddings to be probed.')
 
     parser.add_argument('-r', '--runs', type=int, default=1,
                         help='Number of times to train MLP with new random inits each time.\n'
@@ -52,13 +50,17 @@ if __name__ == '__main__':
     opt = setup_args()
     task_name = opt['task']
     model = opt['model']
-    module = opt['probing_module']
     runs = opt['runs']
 
     project_dir = Path(__file__).resolve().parent.parent
 
     # Load embeddings
-    probing_dir = project_dir.joinpath('trained', model, 'probing', module, task_name)
+    if model == 'GloVe':
+        probing_dir = project_dir.joinpath('trained', 'GloVe', 'probing', task_name)
+    else:
+        module = opt['probing_module']
+        probing_dir = project_dir.joinpath('trained', model, 'probing', module, task_name)
+
     embeddings_path = probing_dir.joinpath(task_name + '.pkl')
     print(f'Loading embeddings from {embeddings_path}')
     X = pickle.load(open(embeddings_path, 'rb'))
