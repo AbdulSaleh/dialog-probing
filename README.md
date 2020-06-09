@@ -1,7 +1,7 @@
 # Probing Neural Dialog Systems for Conversational Understanding
 This code accompanies the paper "Probing Neural Dialog Systems for Conversational Understanding" by Saleh, et al., 2020. 
 
-This repo is mostly built on top of [ParlAI](https://parl.ai/). We add functionality for probing open-domain dialog models (RNNs and Transformers). 
+This repo is built on top of [ParlAI](https://parl.ai/). We add functionality for probing open-domain dialog models (RNNs and Transformers). 
 Probing evaluates the quality of internal model representations for conversational skills. 
 
 ## Setup
@@ -27,7 +27,7 @@ To train on perturbed (i.e. shuffled) data, add the flag ``-sh within``. See Par
 Let's generate and save the ``encoder_state`` vectors for the TREC question classification task:
 
 ```
-python probing/probe_model.py -mf trained/dailydialog/seq2seq/seq2seq -t trecquestion --probe encoder_state 
+python probing/probe_model.py -mf trained/dailydialog/seq2seq/seq2seq -t probing.tasks.trecquestion.agents --probe encoder_state 
 ```
 This will automatically download the required task data and save the generated representations at ``trained/dailydialog/seq2seq/probing/encoder_state/trecquestion``.
 
@@ -75,7 +75,7 @@ text: <utterance1> \n
 <utterance3> \t episode_done:True \n 
 ... 
 ```
-New probing tasks need to be added to [probing/tasks](./probing/tasks) 
+New probing tasks need to be added to [**probing/tasks**](./probing/tasks) 
 and [glove.py](./probing/glove.py).
 
 The code is best suited for tasks where the label is based on:
@@ -91,8 +91,6 @@ See section [3.2]() in the paper for more info.
 Most of the code for this study exists within the [**probing**](./probing) directory. 
 
 We also augmented [torch_generator_agent.py](./parlai/core/torch_generator_agent.py) with probing functions that extract a model's internal representations. 
-
-[//]: # (We also augmented the RNN and Transformer modules in [**agents**](./parlai/agents) with probing functions to extract their internal representations.)  
 
 
 ## Reference
