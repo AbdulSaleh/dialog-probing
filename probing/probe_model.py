@@ -101,7 +101,6 @@ def _probe_single_world(opt, agent, task):
             text, report = log_time.log(cnt, world.num_examples(), _report)
             print(text)
 
-
     # Create save folder for probing outputs
     task_name = world.opt['task'].split('.')[-2]
     model_dir = Path(world.opt['model_file']).parent
@@ -137,9 +136,9 @@ def _probe_single_world(opt, agent, task):
     print("*" * 10, "\n", "*" * 10)
     # Save probing outputs
     try:
-        pickle.dump(world.world.agents[1].probing_outputs, open(save_path, 'wb'))
+        pickle.dump(world.agents[1].probing_outputs, open(save_path, 'wb'))
     except:
-        pickle.dump(world.world.agents[1].probing_outputs, open(save_path, 'wb'), protocol=4)
+        pickle.dump(world.agents[1].probing_outputs, open(save_path, 'wb'), protocol=4)
 
     report = world.report()
     world.reset()
