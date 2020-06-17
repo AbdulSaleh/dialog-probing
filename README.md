@@ -8,7 +8,9 @@ Probing evaluates the quality of internal model representations for conversation
 
 Follow same installation instructions as [ParlAI](https://github.com/facebookresearch/ParlAI/tree/d510bc2e10633d5204e1957a6c98cf30aa1be10d). ParlAI requires Python 3 and PyTorch 1.1 or newer. After cloning this repo, remember to run 
 
-```python setup.py develop```
+```
+python setup.py develop
+```
 
 You will also need to install [skorch](https://github.com/skorch-dev/skorch/tree/14f374db158ec7a7f4770a2fa9b02b8016d2d6ff) 0.6 which is required by the probing classifier.  
 
