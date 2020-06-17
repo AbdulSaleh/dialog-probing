@@ -33,6 +33,12 @@ Let's generate and save the ``encoder_state`` vectors for the TREC question clas
     python probing/probe_model.py -mf trained/dailydialog/seq2seq/seq2seq -t probing.tasks.trecquestion.agents --probe encoder_state 
     ```
     This will automatically download the required task data and save the generated representations at ``trained/dailydialog/seq2seq/probing/encoder_state/trecquestion``.
+    
+    There are three types of hidden representations you can extract and probe:
+    * `encoder_state`
+    * `word_embeddings`
+    * `combined`
+    Refer to the [paper](https://arxiv.org/abs/2006.08331) for more info. 
 
 3. Now you can run the probing classifier to evaluate the quality of the generated representations by running:
 
