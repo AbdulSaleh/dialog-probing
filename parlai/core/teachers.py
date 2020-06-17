@@ -1249,9 +1249,9 @@ class ParlAIDialogTeacher(FixedDialogTeacher):
         self.num_exs = 0
         eps = []
         try:
-            read = open(path)
+            read = open(path).readlines()
         except UnicodeDecodeError:
-            read = open(path, encoding='utf-8')
+            read = open(path, encoding='utf-8').readlines()
 
         if self.opt.get('probe', False):
             # When probing, read all history as one observation
