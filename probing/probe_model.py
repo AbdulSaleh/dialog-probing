@@ -66,6 +66,7 @@ def setup_args(parser=None):
     )
     TensorboardLogger.add_cmdline_args(parser)
     parser.set_defaults(datatype='valid')
+    parser.set_defaults(batchsize=256)
     return parser
 
 
@@ -78,6 +79,10 @@ def _probe_single_world(opt, agent, task):
     task_opt = opt.copy()  # copy opt since we're editing the task
     task_opt['task'] = task
     world = create_task(task_opt, agent)  # create worlds for tasks
+
+    if task_opt['batchsize'] == 1:
+        raise ValueError('Batch size must be greater than 1. '
+                         'Use the --batchsize flag to set batch size.')
 
     # set up logging
     log_every_n_secs = opt.get('log_every_n_secs', -1)
@@ -136,9 +141,9 @@ def _probe_single_world(opt, agent, task):
     print("*" * 10, "\n", "*" * 10)
     # Save probing outputs
     try:
-        pickle.dump(world.agents[1].probing_outputs, open(save_path, 'wb'))
+        pickle.dump(world.world.agents[1].probing_outputs, open(save_path, 'wb'))
     except:
-        pickle.dump(world.agents[1].probing_outputs, open(save_path, 'wb'), protocol=4)
+        pickle.dump(world.world.agents[1].probing_outputs, open(save_path, 'wb'), protocol=4)
 
     report = world.report()
     world.reset()
