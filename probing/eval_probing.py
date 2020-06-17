@@ -1,4 +1,13 @@
-"""Loads embeddings and evaluates their performance on a given probing task
+"""Evaluate the performance of hidden representations on a given probing task.
+This script trains a probing classifier (an MLP, in this case) using the extracted hidden representations as features.
+
+Examples
+--------
+
+.. code-block:: shell
+
+  python probing/eval_probing.py -m trained/dailydialog/seq2seq -t trecquestion --probing-module encoder_state --max_epochs 50 --runs 30
+
 """
 import json
 import pickle
@@ -22,7 +31,7 @@ def setup_args():
     parser = argparse.ArgumentParser()
 
     parser.add_argument('-t', '--task', type=str, required=True,
-                        help='Usage: -t trecquestion\nOnly compatible with names in probing_tasks')
+                        help='Usage: -t trecquestion\nOnly compatible with names in probing/tasks')
     parser.add_argument('-p', '--probing-module', type=str,
                         choices=['word_embeddings', 'encoder_state', 'combined'])
 
@@ -56,10 +65,10 @@ if __name__ == '__main__':
 
     # Load embeddings
     if model == 'GloVe':
-        probing_dir = project_dir.joinpath('trained', 'GloVe', 'probing', task_name)
+        probing_dir = project_dir.joinpath('GloVe', 'probing', task_name)
     else:
         module = opt['probing_module']
-        probing_dir = project_dir.joinpath('trained', model, 'probing', module, task_name)
+        probing_dir = project_dir.joinpath(model, 'probing', module, task_name)
 
     embeddings_path = probing_dir.joinpath(task_name + '.pkl')
     print(f'Loading embeddings from {embeddings_path}')
