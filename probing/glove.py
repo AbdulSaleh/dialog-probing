@@ -8,6 +8,7 @@ import zipfile
 from pathlib import Path
 from itertools import chain
 import urllib.request
+from importlib import import_module
 import numpy as np
 from probing.utils import load_glove, encode_glove
 
@@ -20,10 +21,13 @@ def setup_args():
                         help='Usage: -t trecquestion or -t trecquestion wnli multinli'
                         '\nOnly compatible with names in probing_tasks')
 
+    parser.add_argument('--dict-path', type=str,
+                        help='Include path to a model dict to restrict the vocabulary '
+                             'size used by GloVe for comparibility.')
     return vars(parser.parse_args())
 
 
-def process_task(task_name, save_dir, glove):
+def process_task(task_name, save_dir, glove, dict):
     task_dir = save_dir.joinpath(task_name)
 
     if not task_dir.exists():
@@ -35,6 +39,13 @@ def process_task(task_name, save_dir, glove):
     # Create save file
     save_path = task_dir.joinpath(task_name + '.pkl')
     save_file = open(save_path, 'wb')
+
+    # Check if task data exists, if not then build task
+    data_dir = Path(project_dir, 'data', 'probing', task_name)
+    if not data_dir.exists():
+        build = import_module('.'.join(['probing', 'tasks', task_name, 'build']))
+        build.build({'datapath': Path(__file__).parent.parent.joinpath('data')})
+
 
     # Load and process data depending on task
     print(f'Loading {task_name} data!')
@@ -247,9 +258,8 @@ if __name__ == "__main__":
         save_dir.mkdir(parents=True)
 
     # Check for dict
-    dict_exsists = list(save_dir.glob('*.dict'))
-    if dict_exsists:
-        dict_path = list(save_dir.glob('*.dict'))[0]
+    dict_path = Path(opt['dict_path'])
+    if dict_path.exists():
         lines = open(dict_path).readlines()
         dict = set(line.split('\t')[0] for line in lines)
         print('#' * 10, '\n', '#' * 10)
@@ -263,4 +273,4 @@ if __name__ == "__main__":
 
     task_names = opt['tasks']
     for task_name in task_names:
-        process_task(task_name, save_dir, glove)
+        process_task(task_name, save_dir, glove, dict)
