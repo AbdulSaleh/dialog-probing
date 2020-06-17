@@ -57,6 +57,8 @@ Let's generate and save the ``encoder_state`` vectors for the TREC question clas
     ```
     The final results are saved at ``trained/GloVe/probing/trecquestion/results.json``. 
 
+**Important note:** It's strongly recommended you use the same directories as in the examples to save your checkpoints and data, otherwise other parts of the code will break.
+
 ## Probing tasks
 The supported probing tasks are:
 
