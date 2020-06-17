@@ -1,5 +1,5 @@
 # Probing Neural Dialog Systems for Conversational Understanding
-This code accompanies the paper "Probing Neural Dialog Systems for Conversational Understanding" by Saleh, et al., 2020. 
+This code accompanies the paper "[Probing Neural Dialog Models for Conversational Understanding](https://arxiv.org/abs/2006.08331)" by Saleh, et al., 2020. 
 
 This repo is built on top of [ParlAI](https://parl.ai/). We add functionality for probing open-domain dialog models (RNNs and Transformers). 
 Probing evaluates the quality of internal model representations for conversational skills. 
@@ -46,7 +46,7 @@ Let's generate and save the ``encoder_state`` vectors for the TREC question clas
 1. You might also want to generate the GloVe word embedding baselines. You can do this by running:
 
     ```
-    python probing/glove.py -t trecquestion
+    python probing/glove.py -t trecquestion --dict-path trained\dailydialog\seq2seq\seq2seq.dict
     ```
     This will automatically download the GloVe embeddings and save the generated representations to ``trained/GloVe/probing/trecquestion``
 
@@ -89,7 +89,7 @@ The code is best suited for tasks where the label is based on:
 * or the interaction between two utterances (like DialogueNLI)
 * or the last utterance in a dialog (like ScenarioSA)
 
-See section [3.2]() in the paper for more info. 
+See section [3.2](https://arxiv.org/abs/2006.08331) in the paper for more info. 
 
 
 ## Code Organization
@@ -101,13 +101,13 @@ We also augmented [torch_generator_agent.py](./parlai/core/torch_generator_agent
 
 ## Reference
 
-If you use this code please cite our paper:
+If you use this code please cite our [paper](https://arxiv.org/abs/2006.08331):
 ```
 @article{saleh2020probing,
     author= {Saleh, Abdelrhman and Deutsch, Tovly and Casper, Stephen and Belinkov, Yonatan and Shieber, Stuart},
     title= {Probing Neural Dialog Models for Conversational Understanding},
-    journal={Second Workshop on NLP for Conversational AI},
-    year={2020}
+    journal= {Second Workshop on NLP for Conversational AI},
+    year= {2020}
     }
 ```
 
