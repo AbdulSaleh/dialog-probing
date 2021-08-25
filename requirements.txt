@@ -24,7 +24,7 @@ scipy
 sh
 sphinx
 sphinx_rtd_theme
-tensorflow==1.15
+tensorflow==2.5.1
 textblob
 tqdm
 websocket-client
